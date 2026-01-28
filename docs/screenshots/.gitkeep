@@ -1,0 +1,12 @@
+# Screenshots
+
+Add screenshots here:
+- overview.png - Dashboard overview page
+- nodes.png - Nodes page
+- workloads.png - Workloads page
+- storage.png - Storage page
+- network.png - Network monitoring
+- alerts.png - Alerts page
+- deploy.png - YAML deploy page
+- logs.png - Pod logs viewer
+- light-theme.png - Light theme example
