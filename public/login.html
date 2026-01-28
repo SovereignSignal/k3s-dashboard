@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - K3s Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-box">
+      <h1>K3s Dashboard</h1>
+      <form id="login-form">
+        <input type="password" id="password" placeholder="Enter password" autocomplete="current-password" required autofocus>
+        <button type="submit" class="btn btn-primary btn-block">Log In</button>
+        <p id="login-error" style="color: var(--red); font-size: 0.8rem; margin-top: 0.75rem; text-align: center;"></p>
+      </form>
+    </div>
+  </div>
+  <script src="/js/auth.js"></script>
+</body>
+</html>

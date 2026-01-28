@@ -1,0 +1,26 @@
+{
+  "name": "k3s-dashboard",
+  "version": "1.0.0",
+  "description": "Lightweight web dashboard for managing a Raspberry Pi k3s cluster",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "k3s",
+    "kubernetes",
+    "dashboard",
+    "raspberry-pi"
+  ],
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@kubernetes/client-node": "^1.4.0",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "js-yaml": "^4.1.1"
+  }
+}

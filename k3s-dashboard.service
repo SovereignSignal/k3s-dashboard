@@ -1,0 +1,23 @@
+[Unit]
+Description=K3s Dashboard - Raspberry Pi Cluster Management
+After=network.target k3s.service
+Wants=k3s.service
+
+[Service]
+Type=simple
+User=pi-admin
+WorkingDirectory=/home/pi-admin/k3s-dashboard
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/pi-admin/k3s-dashboard
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

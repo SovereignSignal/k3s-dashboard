@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workloads - K3s Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="mobile-header">
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <span>K3s Dashboard</span>
+  </div>
+  <div class="app-layout">
+    <nav class="sidebar">
+      <div class="sidebar-brand">K3s Dashboard<small>Raspberry Pi Cluster</small></div>
+      <div class="sidebar-nav">
+        <a href="/index.html">Overview</a>
+        <a href="/nodes.html">Nodes</a>
+        <a href="/workloads.html">Workloads</a>
+        <a href="/namespaces.html">Namespaces</a>
+        <a href="/deploy.html">Deploy</a>
+        <a href="/logs.html">Logs</a>
+      </div>
+      <div class="sidebar-footer">
+        <button class="btn btn-sm btn-block" id="logout-btn">Logout</button>
+      </div>
+    </nav>
+    <main class="main-content">
+      <div class="page-header">
+        <h1>Workloads</h1>
+        <button class="btn btn-sm" onclick="loadWorkloads()">Refresh</button>
+      </div>
+
+      <div class="form-inline">
+        <div class="form-group">
+          <label>Namespace</label>
+          <select class="form-control" id="ns-filter" style="width:180px;">
+            <option value="">All namespaces</option>
+          </select>
+        </div>
+      </div>
+
+      <h2 style="font-size:1rem; margin-bottom:0.5rem;">Deployments</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Namespace</th><th>Ready</th><th>Images</th><th>Age</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="deployments-body">
+            <tr><td colspan="6" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 style="font-size:1rem; margin-bottom:0.5rem;">Pods</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Namespace</th><th>Status</th><th>Ready</th><th>Restarts</th><th>Node</th><th>Age</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="pods-body">
+            <tr><td colspan="8" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scale modal -->
+  <div class="modal-overlay" id="scale-modal">
+    <div class="modal">
+      <h3>Scale Deployment</h3>
+      <p class="text-sm text-muted mb-1" id="scale-target"></p>
+      <div class="form-group">
+        <label>Replicas</label>
+        <input type="number" class="form-control" id="scale-replicas" min="0" max="50">
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeScaleModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="doScale()">Scale</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/workloads.js"></script>
+</body>
+</html>

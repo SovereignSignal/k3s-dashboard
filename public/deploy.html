@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deploy - K3s Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="mobile-header">
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <span>K3s Dashboard</span>
+  </div>
+  <div class="app-layout">
+    <nav class="sidebar">
+      <div class="sidebar-brand">K3s Dashboard<small>Raspberry Pi Cluster</small></div>
+      <div class="sidebar-nav">
+        <a href="/index.html">Overview</a>
+        <a href="/nodes.html">Nodes</a>
+        <a href="/workloads.html">Workloads</a>
+        <a href="/namespaces.html">Namespaces</a>
+        <a href="/deploy.html">Deploy</a>
+        <a href="/logs.html">Logs</a>
+      </div>
+      <div class="sidebar-footer">
+        <button class="btn btn-sm btn-block" id="logout-btn">Logout</button>
+      </div>
+    </nav>
+    <main class="main-content">
+      <div class="page-header">
+        <h1>Deploy YAML</h1>
+      </div>
+
+      <div id="deploy-alerts"></div>
+
+      <div class="form-group">
+        <label>Paste your Kubernetes YAML manifest below (multi-document supported with ---)</label>
+        <textarea class="form-control yaml-editor" id="yaml-input" placeholder="apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-app
+        image: nginx:latest
+        ports:
+        - containerPort: 80"></textarea>
+      </div>
+      <div style="display:flex; gap:0.5rem;">
+        <button class="btn btn-primary" onclick="applyYaml()">Apply</button>
+        <button class="btn" onclick="validateYaml()">Validate</button>
+        <button class="btn" onclick="document.getElementById('yaml-input').value=''">Clear</button>
+      </div>
+
+      <div id="apply-results" class="mt-1"></div>
+    </main>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/deploy.js"></script>
+</body>
+</html>
