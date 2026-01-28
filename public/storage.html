@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Storage - K3s Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="mobile-header">
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <span>K3s Dashboard</span>
+  </div>
+  <div class="app-layout">
+    <nav class="sidebar">
+      <div class="sidebar-brand">K3s Dashboard<small>Raspberry Pi Cluster</small></div>
+      <div class="sidebar-nav">
+        <a href="/index.html">Overview</a>
+        <a href="/nodes.html">Nodes</a>
+        <a href="/workloads.html">Workloads</a>
+        <a href="/storage.html">Storage</a>
+        <a href="/namespaces.html">Namespaces</a>
+        <a href="/deploy.html">Deploy</a>
+        <a href="/logs.html">Logs</a>
+      </div>
+      <div class="sidebar-footer">
+        <button class="btn btn-sm btn-block" id="logout-btn">Logout</button>
+      </div>
+    </nav>
+    <main class="main-content">
+      <div class="page-header">
+        <h1>Storage</h1>
+        <button class="btn btn-sm" onclick="loadStorage()">Refresh</button>
+      </div>
+
+      <h2 style="font-size:1rem; margin-bottom:0.5rem;">Node Storage</h2>
+      <p class="text-sm text-muted mb-1">Physical storage devices on each node</p>
+      <div class="card-grid" id="node-storage">
+        <div class="loading-state"><span class="spinner"></span> Loading...</div>
+      </div>
+
+      <h2 style="font-size:1rem; margin: 1.5rem 0 0.5rem;">Storage Classes</h2>
+      <p class="text-sm text-muted mb-1">Available storage provisioners for dynamic volume creation</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Provisioner</th><th>Reclaim Policy</th><th>Binding Mode</th><th>Expansion</th><th>Default</th></tr>
+          </thead>
+          <tbody id="sc-body">
+            <tr><td colspan="6" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 style="font-size:1rem; margin: 1.5rem 0 0.5rem;">Persistent Volumes</h2>
+      <p class="text-sm text-muted mb-1">Provisioned storage volumes in the cluster</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Capacity</th><th>Access Modes</th><th>Status</th><th>Claim</th><th>Storage Class</th><th>Node</th><th>Path</th></tr>
+          </thead>
+          <tbody id="pv-body">
+            <tr><td colspan="8" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 style="font-size:1rem; margin: 1.5rem 0 0.5rem;">Persistent Volume Claims</h2>
+      <p class="text-sm text-muted mb-1">Storage requests from workloads</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Namespace</th><th>Status</th><th>Volume</th><th>Capacity</th><th>Storage Class</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="pvc-body">
+            <tr><td colspan="7" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 2rem; padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius); border: 1px solid var(--border);">
+        <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Storage Tips</h3>
+        <ul class="text-sm text-muted" style="margin-left: 1.2rem; line-height: 1.8;">
+          <li><strong>SSD storage</strong> on pi1 and pi4 is available at <code>/mnt/ssd</code></li>
+          <li>Create a custom StorageClass with <code>pathPattern: /mnt/ssd/...</code> to use SSDs</li>
+          <li>The default <code>local-path</code> StorageClass uses the root filesystem (SD card)</li>
+          <li>Use nodeAffinity to pin storage-heavy workloads to SSD-equipped nodes</li>
+        </ul>
+      </div>
+    </main>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/storage.js"></script>
+</body>
+</html>
