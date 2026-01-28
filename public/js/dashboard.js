@@ -5,12 +5,16 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 
 async function loadDashboard() {
   try {
-    const [overview, events] = await Promise.all([
+    const [overview, events, storage, templates] = await Promise.all([
       api.get('/api/cluster/overview'),
       api.get('/api/cluster/events'),
+      api.get('/api/storage/nodes'),
+      api.get('/api/templates'),
     ]);
     renderSummary(overview);
     renderNodes(overview.nodes.items);
+    renderStorage(storage);
+    renderTemplates(templates);
     renderEvents(events);
   } catch (err) {
     showAlert(document.querySelector('.main-content'), err.message);
@@ -69,6 +73,82 @@ function renderNodes(nodes) {
       </div>
     `;
   }).join('');
+}
+
+function renderStorage(nodes) {
+  const el = document.getElementById('storage-cards');
+
+  // Calculate totals
+  let totalSD = 0, totalSSD = 0;
+  let nodesWithSSD = [];
+
+  nodes.forEach(node => {
+    (node.devices || []).forEach(dev => {
+      const sizeGB = parseFloat(dev.size) || 0;
+      if (dev.type === 'SSD') {
+        totalSSD += sizeGB;
+        if (!nodesWithSSD.includes(node.name)) nodesWithSSD.push(node.name);
+      } else if (dev.type === 'SD Card') {
+        totalSD += sizeGB;
+      }
+    });
+  });
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">SD Card Storage</div>
+      <div class="card-value">${totalSD.toFixed(0)}<span class="unit"> GB total</span></div>
+      <div class="text-sm text-muted mt-1">All nodes (local-path)</div>
+    </div>
+    <div class="card">
+      <div class="card-title">SSD Storage</div>
+      <div class="card-value">${totalSSD.toFixed(0)}<span class="unit"> GB total</span></div>
+      <div class="text-sm text-muted mt-1">${nodesWithSSD.length ? nodesWithSSD.join(', ') : 'None'} (local-path-ssd)</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Storage Classes</div>
+      <div class="card-value">2</div>
+      <div class="text-sm text-muted mt-1"><a href="/storage.html">Manage storage</a></div>
+    </div>
+  `;
+}
+
+function renderTemplates(templates) {
+  const el = document.getElementById('template-cards');
+  el.innerHTML = templates.slice(0, 6).map(t => `
+    <div class="card" style="cursor: pointer;" onclick="deployTemplate('${t.id}')">
+      <div style="display: flex; justify-content: space-between; align-items: start;">
+        <div>
+          <div class="card-title">${t.category}</div>
+          <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem;">${t.name}</div>
+          <div class="text-sm text-muted">${t.description}</div>
+        </div>
+        <span style="font-size: 1.5rem;">${t.icon || '📦'}</span>
+      </div>
+    </div>
+  `).join('') + `
+    <div class="card" style="cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="window.location.href='/deploy.html'">
+      <div class="text-muted" style="text-align: center;">
+        <div style="font-size: 1.5rem;">+</div>
+        <div class="text-sm">Custom YAML</div>
+      </div>
+    </div>
+  `;
+}
+
+async function deployTemplate(templateId) {
+  if (!confirm('Deploy this template to the cluster?')) return;
+  try {
+    const res = await api.post(`/api/templates/${templateId}/deploy`);
+    if (res.error) {
+      showAlert(document.querySelector('.main-content'), res.error, 'error');
+      return;
+    }
+    showAlert(document.querySelector('.main-content'), `Deployed ${templateId} successfully!`, 'success');
+    setTimeout(loadDashboard, 2000);
+  } catch (err) {
+    showAlert(document.querySelector('.main-content'), err.message, 'error');
+  }
 }
 
 function renderEvents(events) {

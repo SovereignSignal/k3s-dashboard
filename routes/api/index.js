@@ -15,6 +15,7 @@ router.use('/pods', require('./pods'));
 router.use('/deployments', require('./deployments'));
 router.use('/namespaces', require('./namespaces'));
 router.use('/storage', require('./storage'));
+router.use('/templates', require('./templates'));
 router.use('/apply', require('./apply'));
 
 module.exports = router;
