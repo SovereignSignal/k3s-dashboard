@@ -87,8 +87,31 @@ function timeAgo(dateStr) {
   return days + 'd ago';
 }
 
-// Set active sidebar link
+// Theme management
+function getTheme() {
+  return localStorage.getItem('theme') || 'dark';
+}
+
+function setTheme(theme) {
+  localStorage.setItem('theme', theme);
+  document.documentElement.setAttribute('data-theme', theme);
+  const toggle = document.querySelector('.theme-toggle-switch');
+  if (toggle) {
+    toggle.setAttribute('aria-checked', theme === 'light');
+  }
+}
+
+function toggleTheme() {
+  const current = getTheme();
+  setTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+// Set active sidebar link and initialize theme
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize theme
+  setTheme(getTheme());
+
+  // Set active nav link
   const path = window.location.pathname.replace(/\/$/, '') || '/index.html';
   document.querySelectorAll('.sidebar-nav a').forEach((a) => {
     const href = a.getAttribute('href').replace(/\/$/, '');
@@ -96,4 +119,10 @@ document.addEventListener('DOMContentLoaded', () => {
       a.classList.add('active');
     }
   });
+
+  // Setup theme toggle click handler
+  const toggle = document.querySelector('.theme-toggle-switch');
+  if (toggle) {
+    toggle.addEventListener('click', toggleTheme);
+  }
 });
