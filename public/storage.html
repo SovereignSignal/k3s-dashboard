@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0a">
   <title>Storage - K3s Dashboard</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
   <div class="mobile-header">
@@ -13,17 +16,30 @@
   </div>
   <div class="app-layout">
     <nav class="sidebar">
-      <div class="sidebar-brand">K3s Dashboard<small>Raspberry Pi Cluster</small></div>
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-name">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="12 6 12 12 16 14" fill="currentColor" stroke="none"/>
+          </svg>
+          K3s Dashboard
+        </div>
+        <small>Raspberry Pi Cluster</small>
+      </div>
+      <div class="sidebar-shortcut">
+        <span>Search</span>
+        <span><kbd>⌘</kbd> <kbd>K</kbd></span>
+      </div>
       <div class="sidebar-nav">
-        <a href="/index.html">Overview</a>
-        <a href="/nodes.html">Nodes</a>
-        <a href="/workloads.html">Workloads</a>
-        <a href="/storage.html">Storage</a>
-        <a href="/network.html">Network</a>
-        <a href="/alerts.html">Alerts</a>
-        <a href="/namespaces.html">Namespaces</a>
-        <a href="/deploy.html">Deploy</a>
-        <a href="/logs.html">Logs</a>
+        <a href="/index.html" data-icon="overview">Overview</a>
+        <a href="/nodes.html" data-icon="nodes">Nodes</a>
+        <a href="/workloads.html" data-icon="workloads">Workloads</a>
+        <a href="/storage.html" data-icon="storage">Storage</a>
+        <a href="/network.html" data-icon="network">Network</a>
+        <a href="/alerts.html" data-icon="alerts">Alerts</a>
+        <a href="/namespaces.html" data-icon="namespaces">Namespaces</a>
+        <a href="/deploy.html" data-icon="deploy">Deploy</a>
+        <a href="/logs.html" data-icon="logs">Logs</a>
       </div>
       <div class="theme-toggle"><span>Theme</span><div class="theme-toggle-switch" role="switch" aria-checked="false"></div></div>
       <div class="sidebar-footer">
@@ -32,62 +48,89 @@
     </nav>
     <main class="main-content">
       <div class="page-header">
-        <h1>Storage</h1>
-        <button class="btn btn-sm" onclick="loadStorage()">Refresh</button>
+        <div>
+          <h1>Storage</h1>
+          <p class="page-subtitle">Physical and persistent storage management</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn" onclick="loadStorage()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
       </div>
 
-      <h2 style="font-size:1rem; margin-bottom:0.5rem;">Node Storage</h2>
-      <p class="text-sm text-muted mb-1">Physical storage devices on each node</p>
+      <div class="section-header">
+        <h2>Node Storage</h2>
+      </div>
+      <p class="text-sm text-secondary mb-2">Physical storage devices on each node</p>
       <div class="card-grid" id="node-storage">
-        <div class="loading-state"><span class="spinner"></span> Loading...</div>
+        <div class="card skeleton skeleton-card"></div>
+        <div class="card skeleton skeleton-card"></div>
+        <div class="card skeleton skeleton-card"></div>
+        <div class="card skeleton skeleton-card"></div>
       </div>
 
-      <h2 style="font-size:1rem; margin: 1.5rem 0 0.5rem;">Storage Classes</h2>
-      <p class="text-sm text-muted mb-1">Available storage provisioners for dynamic volume creation</p>
+      <div class="section-header mt-3">
+        <h2>Storage Classes</h2>
+      </div>
+      <p class="text-sm text-secondary mb-2">Available storage provisioners for dynamic volume creation</p>
       <div class="table-wrap">
         <table>
           <thead>
             <tr><th>Name</th><th>Provisioner</th><th>Reclaim Policy</th><th>Binding Mode</th><th>Expansion</th><th>Default</th></tr>
           </thead>
           <tbody id="sc-body">
-            <tr><td colspan="6" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+            <tr><td colspan="6" class="loading-state"><span class="spinner"></span><p>Loading...</p></td></tr>
           </tbody>
         </table>
       </div>
 
-      <h2 style="font-size:1rem; margin: 1.5rem 0 0.5rem;">Persistent Volumes</h2>
-      <p class="text-sm text-muted mb-1">Provisioned storage volumes in the cluster</p>
-      <div class="table-wrap">
+      <div class="section-header mt-3">
+        <h2>Persistent Volumes</h2>
+      </div>
+      <p class="text-sm text-secondary mb-2">Provisioned storage volumes in the cluster</p>
+      <div class="table-wrap overflow-auto">
         <table>
           <thead>
             <tr><th>Name</th><th>Capacity</th><th>Access Modes</th><th>Status</th><th>Claim</th><th>Storage Class</th><th>Node</th><th>Path</th></tr>
           </thead>
           <tbody id="pv-body">
-            <tr><td colspan="8" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+            <tr><td colspan="8" class="loading-state"><span class="spinner"></span><p>Loading...</p></td></tr>
           </tbody>
         </table>
       </div>
 
-      <h2 style="font-size:1rem; margin: 1.5rem 0 0.5rem;">Persistent Volume Claims</h2>
-      <p class="text-sm text-muted mb-1">Storage requests from workloads</p>
-      <div class="table-wrap">
+      <div class="section-header mt-3">
+        <h2>Persistent Volume Claims</h2>
+      </div>
+      <p class="text-sm text-secondary mb-2">Storage requests from workloads</p>
+      <div class="table-wrap overflow-auto">
         <table>
           <thead>
             <tr><th>Name</th><th>Namespace</th><th>Status</th><th>Volume</th><th>Capacity</th><th>Storage Class</th><th>Actions</th></tr>
           </thead>
           <tbody id="pvc-body">
-            <tr><td colspan="7" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+            <tr><td colspan="7" class="loading-state"><span class="spinner"></span><p>Loading...</p></td></tr>
           </tbody>
         </table>
       </div>
 
-      <div style="margin-top: 2rem; padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius); border: 1px solid var(--border);">
-        <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Storage Tips</h3>
-        <ul class="text-sm text-muted" style="margin-left: 1.2rem; line-height: 1.8;">
-          <li><strong>SSD storage</strong> on pi1 and pi4 is available at <code>/mnt/ssd</code></li>
-          <li>Create a custom StorageClass with <code>pathPattern: /mnt/ssd/...</code> to use SSDs</li>
+      <div class="card mt-3" style="background: var(--bg-tertiary);">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/>
+          </svg>
+          Storage Tips
+        </div>
+        <ul class="text-sm text-secondary" style="margin-left: 1.2rem; line-height: 1.8;">
+          <li><strong>SSD storage</strong> on pi1 and pi4 is available via the <code>local-path-ssd</code> StorageClass</li>
           <li>The default <code>local-path</code> StorageClass uses the root filesystem (SD card)</li>
-          <li>Use nodeAffinity to pin storage-heavy workloads to SSD-equipped nodes</li>
+          <li>Use <code>storageClassName: local-path-ssd</code> in your PVC to use SSD storage</li>
+          <li>PVCs with SSD storage will only be scheduled on SSD-equipped nodes</li>
         </ul>
       </div>
     </main>

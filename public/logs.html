@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0a">
   <title>Logs - K3s Dashboard</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
   <div class="mobile-header">
@@ -13,17 +16,30 @@
   </div>
   <div class="app-layout">
     <nav class="sidebar">
-      <div class="sidebar-brand">K3s Dashboard<small>Raspberry Pi Cluster</small></div>
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-name">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="12 6 12 12 16 14" fill="currentColor" stroke="none"/>
+          </svg>
+          K3s Dashboard
+        </div>
+        <small>Raspberry Pi Cluster</small>
+      </div>
+      <div class="sidebar-shortcut">
+        <span>Search</span>
+        <span><kbd>⌘</kbd> <kbd>K</kbd></span>
+      </div>
       <div class="sidebar-nav">
-        <a href="/index.html">Overview</a>
-        <a href="/nodes.html">Nodes</a>
-        <a href="/workloads.html">Workloads</a>
-        <a href="/storage.html">Storage</a>
-        <a href="/network.html">Network</a>
-        <a href="/alerts.html">Alerts</a>
-        <a href="/namespaces.html">Namespaces</a>
-        <a href="/deploy.html">Deploy</a>
-        <a href="/logs.html">Logs</a>
+        <a href="/index.html" data-icon="overview">Overview</a>
+        <a href="/nodes.html" data-icon="nodes">Nodes</a>
+        <a href="/workloads.html" data-icon="workloads">Workloads</a>
+        <a href="/storage.html" data-icon="storage">Storage</a>
+        <a href="/network.html" data-icon="network">Network</a>
+        <a href="/alerts.html" data-icon="alerts">Alerts</a>
+        <a href="/namespaces.html" data-icon="namespaces">Namespaces</a>
+        <a href="/deploy.html" data-icon="deploy">Deploy</a>
+        <a href="/logs.html" data-icon="logs">Logs</a>
       </div>
       <div class="theme-toggle"><span>Theme</span><div class="theme-toggle-switch" role="switch" aria-checked="false"></div></div>
       <div class="sidebar-footer">
@@ -32,38 +48,48 @@
     </nav>
     <main class="main-content">
       <div class="page-header">
-        <h1>Pod Logs</h1>
+        <div>
+          <h1>Pod Logs</h1>
+          <p class="page-subtitle">View container logs from any pod</p>
+        </div>
       </div>
 
-      <div class="form-inline">
-        <div class="form-group">
-          <label>Namespace</label>
-          <select class="form-control" id="log-ns" style="width:160px;">
-            <option value="">Select...</option>
-          </select>
+      <div class="card mb-2" style="padding: 1rem;">
+        <div class="form-inline">
+          <div class="form-group">
+            <label>Namespace</label>
+            <select class="form-control" id="log-ns" style="width:160px;">
+              <option value="">Select...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Pod</label>
+            <select class="form-control" id="log-pod" style="width:280px;">
+              <option value="">Select...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Container</label>
+            <select class="form-control" id="log-container" style="width:160px;">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Lines</label>
+            <select class="form-control" id="log-lines" style="width:100px;">
+              <option value="100">100</option>
+              <option value="500" selected>500</option>
+              <option value="1000">1000</option>
+              <option value="5000">5000</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="fetchLogs()" style="margin-top: 1.5rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+            </svg>
+            Fetch Logs
+          </button>
         </div>
-        <div class="form-group">
-          <label>Pod</label>
-          <select class="form-control" id="log-pod" style="width:280px;">
-            <option value="">Select...</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Container</label>
-          <select class="form-control" id="log-container" style="width:160px;">
-            <option value="">All</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Lines</label>
-          <select class="form-control" id="log-lines" style="width:100px;">
-            <option value="100">100</option>
-            <option value="500" selected>500</option>
-            <option value="1000">1000</option>
-            <option value="5000">5000</option>
-          </select>
-        </div>
-        <button class="btn btn-primary" onclick="fetchLogs()">Fetch Logs</button>
       </div>
 
       <div class="log-viewer" id="log-output">Select a namespace and pod to view logs.</div>

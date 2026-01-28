@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0a">
   <title>Workloads - K3s Dashboard</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
   <div class="mobile-header">
@@ -13,17 +16,30 @@
   </div>
   <div class="app-layout">
     <nav class="sidebar">
-      <div class="sidebar-brand">K3s Dashboard<small>Raspberry Pi Cluster</small></div>
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-name">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="12 6 12 12 16 14" fill="currentColor" stroke="none"/>
+          </svg>
+          K3s Dashboard
+        </div>
+        <small>Raspberry Pi Cluster</small>
+      </div>
+      <div class="sidebar-shortcut">
+        <span>Search</span>
+        <span><kbd>⌘</kbd> <kbd>K</kbd></span>
+      </div>
       <div class="sidebar-nav">
-        <a href="/index.html">Overview</a>
-        <a href="/nodes.html">Nodes</a>
-        <a href="/workloads.html">Workloads</a>
-        <a href="/storage.html">Storage</a>
-        <a href="/network.html">Network</a>
-        <a href="/alerts.html">Alerts</a>
-        <a href="/namespaces.html">Namespaces</a>
-        <a href="/deploy.html">Deploy</a>
-        <a href="/logs.html">Logs</a>
+        <a href="/index.html" data-icon="overview">Overview</a>
+        <a href="/nodes.html" data-icon="nodes">Nodes</a>
+        <a href="/workloads.html" data-icon="workloads">Workloads</a>
+        <a href="/storage.html" data-icon="storage">Storage</a>
+        <a href="/network.html" data-icon="network">Network</a>
+        <a href="/alerts.html" data-icon="alerts">Alerts</a>
+        <a href="/namespaces.html" data-icon="namespaces">Namespaces</a>
+        <a href="/deploy.html" data-icon="deploy">Deploy</a>
+        <a href="/logs.html" data-icon="logs">Logs</a>
       </div>
       <div class="theme-toggle"><span>Theme</span><div class="theme-toggle-switch" role="switch" aria-checked="false"></div></div>
       <div class="sidebar-footer">
@@ -32,39 +48,54 @@
     </nav>
     <main class="main-content">
       <div class="page-header">
-        <h1>Workloads</h1>
-        <button class="btn btn-sm" onclick="loadWorkloads()">Refresh</button>
+        <div>
+          <h1>Workloads</h1>
+          <p class="page-subtitle">Manage deployments and pods</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn" onclick="loadWorkloads()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
       </div>
 
-      <div class="form-inline">
+      <div class="form-inline mb-2">
         <div class="form-group">
           <label>Namespace</label>
-          <select class="form-control" id="ns-filter" style="width:180px;">
+          <select class="form-control" id="ns-filter" style="width:200px;">
             <option value="">All namespaces</option>
           </select>
         </div>
       </div>
 
-      <h2 style="font-size:1rem; margin-bottom:0.5rem;">Deployments</h2>
-      <div class="table-wrap">
+      <div class="section-header">
+        <h2>Deployments</h2>
+      </div>
+      <div class="table-wrap overflow-auto">
         <table>
           <thead>
             <tr><th>Name</th><th>Namespace</th><th>Ready</th><th>Images</th><th>Age</th><th>Actions</th></tr>
           </thead>
           <tbody id="deployments-body">
-            <tr><td colspan="6" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+            <tr><td colspan="6" class="loading-state"><span class="spinner"></span><p>Loading deployments...</p></td></tr>
           </tbody>
         </table>
       </div>
 
-      <h2 style="font-size:1rem; margin-bottom:0.5rem;">Pods</h2>
-      <div class="table-wrap">
+      <div class="section-header">
+        <h2>Pods</h2>
+      </div>
+      <div class="table-wrap overflow-auto">
         <table>
           <thead>
             <tr><th>Name</th><th>Namespace</th><th>Status</th><th>Ready</th><th>Restarts</th><th>Node</th><th>Age</th><th>Actions</th></tr>
           </thead>
           <tbody id="pods-body">
-            <tr><td colspan="8" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+            <tr><td colspan="8" class="loading-state"><span class="spinner"></span><p>Loading pods...</p></td></tr>
           </tbody>
         </table>
       </div>
@@ -74,11 +105,20 @@
   <!-- Scale modal -->
   <div class="modal-overlay" id="scale-modal">
     <div class="modal">
-      <h3>Scale Deployment</h3>
-      <p class="text-sm text-muted mb-1" id="scale-target"></p>
-      <div class="form-group">
-        <label>Replicas</label>
-        <input type="number" class="form-control" id="scale-replicas" min="0" max="50">
+      <div class="modal-header">
+        <h3>Scale Deployment</h3>
+        <div class="modal-close" role="button" aria-label="Close" onclick="closeScaleModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </div>
+      </div>
+      <div class="modal-body">
+        <p class="text-secondary" id="scale-target"></p>
+        <div class="form-group mt-2">
+          <label>Replicas</label>
+          <input type="number" class="form-control" id="scale-replicas" min="0" max="50">
+        </div>
       </div>
       <div class="modal-actions">
         <button class="btn" onclick="closeScaleModal()">Cancel</button>

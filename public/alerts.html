@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0a">
   <title>Alerts - K3s Dashboard</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
   <div class="mobile-header">
@@ -13,17 +16,30 @@
   </div>
   <div class="app-layout">
     <nav class="sidebar">
-      <div class="sidebar-brand">K3s Dashboard<small>Raspberry Pi Cluster</small></div>
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-name">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="12 6 12 12 16 14" fill="currentColor" stroke="none"/>
+          </svg>
+          K3s Dashboard
+        </div>
+        <small>Raspberry Pi Cluster</small>
+      </div>
+      <div class="sidebar-shortcut">
+        <span>Search</span>
+        <span><kbd>⌘</kbd> <kbd>K</kbd></span>
+      </div>
       <div class="sidebar-nav">
-        <a href="/index.html">Overview</a>
-        <a href="/nodes.html">Nodes</a>
-        <a href="/workloads.html">Workloads</a>
-        <a href="/storage.html">Storage</a>
-        <a href="/network.html">Network</a>
-        <a href="/alerts.html">Alerts</a>
-        <a href="/namespaces.html">Namespaces</a>
-        <a href="/deploy.html">Deploy</a>
-        <a href="/logs.html">Logs</a>
+        <a href="/index.html" data-icon="overview">Overview</a>
+        <a href="/nodes.html" data-icon="nodes">Nodes</a>
+        <a href="/workloads.html" data-icon="workloads">Workloads</a>
+        <a href="/storage.html" data-icon="storage">Storage</a>
+        <a href="/network.html" data-icon="network">Network</a>
+        <a href="/alerts.html" data-icon="alerts">Alerts</a>
+        <a href="/namespaces.html" data-icon="namespaces">Namespaces</a>
+        <a href="/deploy.html" data-icon="deploy">Deploy</a>
+        <a href="/logs.html" data-icon="logs">Logs</a>
       </div>
       <div class="theme-toggle"><span>Theme</span><div class="theme-toggle-switch" role="switch" aria-checked="false"></div></div>
       <div class="sidebar-footer">
@@ -32,38 +48,58 @@
     </nav>
     <main class="main-content">
       <div class="page-header">
-        <h1>Alerts</h1>
         <div>
-          <button class="btn btn-sm" onclick="runCheck()">Check Now</button>
-          <button class="btn btn-sm" onclick="loadAlerts()">Refresh</button>
+          <h1>Alerts</h1>
+          <p class="page-subtitle">Cluster health monitoring and alerting</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn" onclick="runCheck()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Check Now
+          </button>
+          <button class="btn" onclick="loadAlerts()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            Refresh
+          </button>
         </div>
       </div>
 
       <div class="card-grid" id="alert-summary">
-        <div class="loading-state"><span class="spinner"></span> Loading...</div>
+        <div class="card skeleton skeleton-card"></div>
+        <div class="card skeleton skeleton-card"></div>
+        <div class="card skeleton skeleton-card"></div>
       </div>
 
-      <h2 style="font-size:1rem; margin: 1rem 0 0.5rem;">Active Alerts</h2>
+      <div class="section-header mt-2">
+        <h2>Active Alerts</h2>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr><th>Severity</th><th>Rule</th><th>Resource</th><th>Message</th><th>Time</th><th>Actions</th></tr>
           </thead>
           <tbody id="alerts-body">
-            <tr><td colspan="6" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+            <tr><td colspan="6" class="loading-state"><span class="spinner"></span><p>Loading alerts...</p></td></tr>
           </tbody>
         </table>
       </div>
 
-      <h2 style="font-size:1rem; margin: 1.5rem 0 0.5rem;">Alert Rules</h2>
-      <p class="text-sm text-muted mb-1">Configure which conditions trigger alerts</p>
+      <div class="section-header mt-3">
+        <h2>Alert Rules</h2>
+      </div>
+      <p class="text-sm text-secondary mb-2">Configure which conditions trigger alerts (auto-check every 60s)</p>
       <div class="table-wrap">
         <table>
           <thead>
             <tr><th>Enabled</th><th>Rule</th><th>Description</th><th>Severity</th><th>Threshold</th></tr>
           </thead>
           <tbody id="rules-body">
-            <tr><td colspan="5" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+            <tr><td colspan="5" class="loading-state"><span class="spinner"></span><p>Loading rules...</p></td></tr>
           </tbody>
         </table>
       </div>

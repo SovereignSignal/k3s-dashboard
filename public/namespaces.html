@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0a">
   <title>Namespaces - K3s Dashboard</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
   <div class="mobile-header">
@@ -13,17 +16,30 @@
   </div>
   <div class="app-layout">
     <nav class="sidebar">
-      <div class="sidebar-brand">K3s Dashboard<small>Raspberry Pi Cluster</small></div>
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-name">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="12 6 12 12 16 14" fill="currentColor" stroke="none"/>
+          </svg>
+          K3s Dashboard
+        </div>
+        <small>Raspberry Pi Cluster</small>
+      </div>
+      <div class="sidebar-shortcut">
+        <span>Search</span>
+        <span><kbd>⌘</kbd> <kbd>K</kbd></span>
+      </div>
       <div class="sidebar-nav">
-        <a href="/index.html">Overview</a>
-        <a href="/nodes.html">Nodes</a>
-        <a href="/workloads.html">Workloads</a>
-        <a href="/storage.html">Storage</a>
-        <a href="/network.html">Network</a>
-        <a href="/alerts.html">Alerts</a>
-        <a href="/namespaces.html">Namespaces</a>
-        <a href="/deploy.html">Deploy</a>
-        <a href="/logs.html">Logs</a>
+        <a href="/index.html" data-icon="overview">Overview</a>
+        <a href="/nodes.html" data-icon="nodes">Nodes</a>
+        <a href="/workloads.html" data-icon="workloads">Workloads</a>
+        <a href="/storage.html" data-icon="storage">Storage</a>
+        <a href="/network.html" data-icon="network">Network</a>
+        <a href="/alerts.html" data-icon="alerts">Alerts</a>
+        <a href="/namespaces.html" data-icon="namespaces">Namespaces</a>
+        <a href="/deploy.html" data-icon="deploy">Deploy</a>
+        <a href="/logs.html" data-icon="logs">Logs</a>
       </div>
       <div class="theme-toggle"><span>Theme</span><div class="theme-toggle-switch" role="switch" aria-checked="false"></div></div>
       <div class="sidebar-footer">
@@ -32,16 +48,34 @@
     </nav>
     <main class="main-content">
       <div class="page-header">
-        <h1>Namespaces</h1>
-        <button class="btn btn-sm" onclick="loadNamespaces()">Refresh</button>
+        <div>
+          <h1>Namespaces</h1>
+          <p class="page-subtitle">Manage cluster namespaces</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn" onclick="loadNamespaces()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
       </div>
 
-      <div class="form-inline">
-        <div class="form-group">
-          <label>Create Namespace</label>
-          <input type="text" class="form-control" id="new-ns-name" placeholder="my-namespace" style="width:220px;">
+      <div class="card mb-2" style="padding: 1rem;">
+        <div class="flex items-center gap-2">
+          <div class="form-group mb-0 flex-1" style="max-width: 280px;">
+            <label>Create Namespace</label>
+            <input type="text" class="form-control" id="new-ns-name" placeholder="my-namespace">
+          </div>
+          <button class="btn btn-primary" onclick="createNamespace()" style="margin-top: 1.5rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Create
+          </button>
         </div>
-        <button class="btn btn-primary" onclick="createNamespace()">Create</button>
       </div>
 
       <div class="table-wrap">
@@ -50,7 +84,7 @@
             <tr><th>Name</th><th>Status</th><th>Created</th><th>Actions</th></tr>
           </thead>
           <tbody id="ns-body">
-            <tr><td colspan="4" class="loading-state"><span class="spinner"></span> Loading...</td></tr>
+            <tr><td colspan="4" class="loading-state"><span class="spinner"></span><p>Loading namespaces...</p></td></tr>
           </tbody>
         </table>
       </div>
