@@ -1,0 +1,13 @@
+{
+  "name": "llm-backroom",
+  "version": "1.0.0",
+  "description": "LLM Backroom - Multi-agent conversation orchestrator",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.0.1",
+    "cors": "^2.8.5"
+  }
+}

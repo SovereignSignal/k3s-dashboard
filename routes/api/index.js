@@ -20,5 +20,6 @@ router.use('/alerts', require('./alerts'));
 router.use('/templates', require('./templates'));
 router.use('/apply', require('./apply'));
 router.use('/metrics', require('./metrics'));
+router.use('/backroom', require('./backroom'));
 
 module.exports = router;
