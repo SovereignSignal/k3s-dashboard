@@ -2,9 +2,15 @@ const { Router } = require('express');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
+const fs = require('fs').promises;
+const path = require('path');
+const os = require('os');
 const k8s = require('@kubernetes/client-node');
 const config = require('../../config');
 const logger = require('../../utils/logger');
+
+// File path for storing discovered devices
+const DEVICES_FILE = path.join(__dirname, '../../data/network-devices.json');
 
 const kc = new k8s.KubeConfig();
 if (config.kubeconfigPath) {
@@ -189,6 +195,404 @@ router.get('/services', async (req, res, next) => {
         })),
       }));
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ============================================
+// Network Manager - LAN Discovery & Monitoring
+// ============================================
+
+// Load saved devices from file
+async function loadDevices() {
+  try {
+    const data = await fs.readFile(DEVICES_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch {
+    return { devices: {}, lastScan: null };
+  }
+}
+
+// Save devices to file
+async function saveDevices(data) {
+  await fs.mkdir(path.dirname(DEVICES_FILE), { recursive: true });
+  await fs.writeFile(DEVICES_FILE, JSON.stringify(data, null, 2));
+}
+
+// Get network interface information
+router.get('/info', async (req, res, next) => {
+  try {
+    const info = {
+      hostname: os.hostname(),
+      interfaces: [],
+      gateway: null,
+      dns: [],
+      subnet: null,
+    };
+
+    // Get interfaces with IPs
+    const interfaces = os.networkInterfaces();
+    for (const [name, addrs] of Object.entries(interfaces)) {
+      if (name === 'lo') continue;
+      for (const addr of addrs) {
+        if (addr.family === 'IPv4') {
+          info.interfaces.push({
+            name,
+            address: addr.address,
+            netmask: addr.netmask,
+            mac: addr.mac,
+            internal: addr.internal,
+          });
+        }
+      }
+    }
+
+    // Get default gateway
+    try {
+      const { stdout } = await execAsync("ip route | grep default | awk '{print $3}'");
+      info.gateway = stdout.trim().split('\n')[0] || null;
+    } catch {}
+
+    // Get DNS servers
+    try {
+      const { stdout } = await execAsync("grep nameserver /etc/resolv.conf | awk '{print $2}'");
+      info.dns = stdout.trim().split('\n').filter(Boolean);
+    } catch {}
+
+    // Calculate subnet from first non-internal interface
+    const primaryIf = info.interfaces.find(i => !i.internal && i.address);
+    if (primaryIf) {
+      const ipParts = primaryIf.address.split('.');
+      const maskParts = primaryIf.netmask.split('.');
+      const networkParts = ipParts.map((p, i) => parseInt(p) & parseInt(maskParts[i]));
+      const cidr = maskParts.reduce((acc, m) => acc + (m >>> 0).toString(2).split('1').length - 1, 0);
+      info.subnet = `${networkParts.join('.')}/${cidr}`;
+    }
+
+    res.json(info);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Discover devices on the network using ARP and optional nmap
+router.get('/discover', async (req, res, next) => {
+  try {
+    const devices = {};
+    const now = Date.now();
+
+    // First, ping sweep the subnet to populate ARP cache
+    // Get the local subnet
+    const interfaces = os.networkInterfaces();
+    let localIP = null;
+    let subnet = null;
+
+    for (const [name, addrs] of Object.entries(interfaces)) {
+      if (name === 'lo') continue;
+      for (const addr of addrs) {
+        if (addr.family === 'IPv4' && !addr.internal) {
+          localIP = addr.address;
+          const ipParts = addr.address.split('.');
+          subnet = `${ipParts[0]}.${ipParts[1]}.${ipParts[2]}`;
+          break;
+        }
+      }
+      if (subnet) break;
+    }
+
+    if (!subnet) {
+      return res.status(500).json({ error: 'Could not determine local subnet' });
+    }
+
+    // Quick ARP-based discovery first (existing entries)
+    try {
+      const { stdout } = await execAsync('ip neighbor show | grep -v FAILED');
+      const lines = stdout.trim().split('\n').filter(Boolean);
+
+      for (const line of lines) {
+        const parts = line.split(/\s+/);
+        const ip = parts[0];
+        const macIndex = parts.indexOf('lladdr');
+        const mac = macIndex !== -1 ? parts[macIndex + 1]?.toUpperCase() : null;
+        const state = parts[parts.length - 1];
+
+        if (ip && mac && ip.startsWith(subnet.split('.').slice(0, 2).join('.'))) {
+          devices[ip] = {
+            ip,
+            mac,
+            state: state === 'REACHABLE' || state === 'STALE' ? 'online' : 'offline',
+            lastSeen: now,
+            hostname: null,
+            vendor: null,
+          };
+        }
+      }
+    } catch {}
+
+    // Try nmap for more thorough discovery if available
+    const useNmap = req.query.thorough === 'true';
+    if (useNmap) {
+      try {
+        // Quick ping scan with nmap
+        const { stdout } = await execAsync(`nmap -sn ${subnet}.0/24 -oG - 2>/dev/null | grep "Host:"`, { timeout: 60000 });
+        const lines = stdout.trim().split('\n').filter(Boolean);
+
+        for (const line of lines) {
+          const ipMatch = line.match(/Host:\s+([\d.]+)/);
+          if (ipMatch) {
+            const ip = ipMatch[1];
+            if (!devices[ip]) {
+              devices[ip] = {
+                ip,
+                mac: null,
+                state: 'online',
+                lastSeen: now,
+                hostname: null,
+                vendor: null,
+              };
+            } else {
+              devices[ip].state = 'online';
+              devices[ip].lastSeen = now;
+            }
+          }
+        }
+      } catch (e) {
+        // nmap not available or failed, continue with ARP results
+        logger.debug('nmap scan failed or unavailable:', e.message);
+      }
+    }
+
+    // Try to resolve hostnames via DNS
+    for (const ip of Object.keys(devices)) {
+      try {
+        const { stdout } = await execAsync(`getent hosts ${ip} | awk '{print $2}'`, { timeout: 2000 });
+        const hostname = stdout.trim();
+        if (hostname && hostname !== ip) {
+          devices[ip].hostname = hostname;
+        }
+      } catch {}
+    }
+
+    // Try reverse DNS
+    for (const ip of Object.keys(devices)) {
+      if (!devices[ip].hostname) {
+        try {
+          const { stdout } = await execAsync(`host ${ip} 2>/dev/null | grep "domain name pointer" | awk '{print $NF}' | sed 's/\\.$//'`, { timeout: 2000 });
+          const hostname = stdout.trim();
+          if (hostname) {
+            devices[ip].hostname = hostname;
+          }
+        } catch {}
+      }
+    }
+
+    // Load previously saved data and merge
+    const saved = await loadDevices();
+
+    // Update existing devices and add new ones
+    for (const [ip, device] of Object.entries(devices)) {
+      if (saved.devices[ip]) {
+        // Preserve custom names and notes
+        device.customName = saved.devices[ip].customName;
+        device.notes = saved.devices[ip].notes;
+        device.deviceType = saved.devices[ip].deviceType;
+        // Update first seen if not set
+        device.firstSeen = saved.devices[ip].firstSeen || now;
+      } else {
+        device.firstSeen = now;
+      }
+    }
+
+    // Mark devices not seen as offline
+    for (const [ip, device] of Object.entries(saved.devices)) {
+      if (!devices[ip]) {
+        devices[ip] = {
+          ...device,
+          state: 'offline',
+        };
+      }
+    }
+
+    // Save updated device list
+    await saveDevices({ devices, lastScan: now });
+
+    // Sort by IP address
+    const sortedDevices = Object.values(devices).sort((a, b) => {
+      const aParts = a.ip.split('.').map(Number);
+      const bParts = b.ip.split('.').map(Number);
+      for (let i = 0; i < 4; i++) {
+        if (aParts[i] !== bParts[i]) return aParts[i] - bParts[i];
+      }
+      return 0;
+    });
+
+    res.json({
+      devices: sortedDevices,
+      localIP,
+      subnet: `${subnet}.0/24`,
+      lastScan: now,
+      count: {
+        total: sortedDevices.length,
+        online: sortedDevices.filter(d => d.state === 'online').length,
+        offline: sortedDevices.filter(d => d.state === 'offline').length,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Ping a specific device
+router.post('/ping-device', async (req, res, next) => {
+  try {
+    const { ip } = req.body;
+    if (!ip || !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+      return res.status(400).json({ error: 'Invalid IP address' });
+    }
+
+    const results = [];
+    const count = parseInt(req.query.count) || 4;
+
+    for (let i = 0; i < count; i++) {
+      try {
+        const start = Date.now();
+        const { stdout } = await execAsync(`ping -c 1 -W 2 ${ip}`, { timeout: 5000 });
+        const latency = Date.now() - start;
+
+        // Extract TTL
+        const ttlMatch = stdout.match(/ttl=(\d+)/i);
+        const ttl = ttlMatch ? parseInt(ttlMatch[1]) : null;
+
+        results.push({ seq: i + 1, latency, ttl, success: true });
+      } catch {
+        results.push({ seq: i + 1, latency: null, ttl: null, success: false });
+      }
+    }
+
+    const successful = results.filter(r => r.success);
+    const stats = {
+      ip,
+      results,
+      summary: {
+        sent: count,
+        received: successful.length,
+        lost: count - successful.length,
+        lossPercent: ((count - successful.length) / count * 100).toFixed(1),
+        minLatency: successful.length ? Math.min(...successful.map(r => r.latency)) : null,
+        maxLatency: successful.length ? Math.max(...successful.map(r => r.latency)) : null,
+        avgLatency: successful.length ? Math.round(successful.reduce((a, r) => a + r.latency, 0) / successful.length) : null,
+      },
+    };
+
+    res.json(stats);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Update device info (custom name, notes, type)
+router.patch('/device/:ip', async (req, res, next) => {
+  try {
+    const { ip } = req.params;
+    const { customName, notes, deviceType } = req.body;
+
+    const data = await loadDevices();
+
+    if (!data.devices[ip]) {
+      return res.status(404).json({ error: 'Device not found' });
+    }
+
+    if (customName !== undefined) data.devices[ip].customName = customName;
+    if (notes !== undefined) data.devices[ip].notes = notes;
+    if (deviceType !== undefined) data.devices[ip].deviceType = deviceType;
+
+    await saveDevices(data);
+    res.json(data.devices[ip]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Delete a device from tracking
+router.delete('/device/:ip', async (req, res, next) => {
+  try {
+    const { ip } = req.params;
+    const data = await loadDevices();
+
+    if (data.devices[ip]) {
+      delete data.devices[ip];
+      await saveDevices(data);
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Port scan a device (common ports only for safety)
+router.post('/port-scan', async (req, res, next) => {
+  try {
+    const { ip } = req.body;
+    if (!ip || !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+      return res.status(400).json({ error: 'Invalid IP address' });
+    }
+
+    // Common ports to check
+    const commonPorts = [
+      { port: 22, service: 'SSH' },
+      { port: 80, service: 'HTTP' },
+      { port: 443, service: 'HTTPS' },
+      { port: 21, service: 'FTP' },
+      { port: 23, service: 'Telnet' },
+      { port: 25, service: 'SMTP' },
+      { port: 53, service: 'DNS' },
+      { port: 3389, service: 'RDP' },
+      { port: 5900, service: 'VNC' },
+      { port: 8080, service: 'HTTP-Alt' },
+      { port: 3000, service: 'Dev Server' },
+      { port: 5000, service: 'Dev Server' },
+      { port: 6443, service: 'K8s API' },
+      { port: 10250, service: 'Kubelet' },
+    ];
+
+    const results = await Promise.all(commonPorts.map(async ({ port, service }) => {
+      try {
+        // Use timeout to check if port is open
+        await execAsync(`timeout 1 bash -c "echo >/dev/tcp/${ip}/${port}" 2>/dev/null`, { timeout: 2000 });
+        return { port, service, open: true };
+      } catch {
+        return { port, service, open: false };
+      }
+    }));
+
+    res.json({
+      ip,
+      openPorts: results.filter(r => r.open),
+      closedPorts: results.filter(r => !r.open),
+      scannedAt: Date.now(),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Wake-on-LAN
+router.post('/wake', async (req, res, next) => {
+  try {
+    const { mac } = req.body;
+    if (!mac || !/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/.test(mac)) {
+      return res.status(400).json({ error: 'Invalid MAC address' });
+    }
+
+    // Try using wakeonlan or etherwake
+    try {
+      await execAsync(`wakeonlan ${mac} 2>/dev/null || etherwake ${mac} 2>/dev/null`);
+      res.json({ success: true, message: `Wake-on-LAN packet sent to ${mac}` });
+    } catch {
+      res.status(500).json({ error: 'Wake-on-LAN tools not available. Install wakeonlan package.' });
+    }
   } catch (err) {
     next(err);
   }
