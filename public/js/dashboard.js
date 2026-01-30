@@ -132,7 +132,15 @@ function renderStorage(nodes) {
 
 function renderTemplates(templates) {
   const el = document.getElementById('template-cards');
-  el.innerHTML = templates.slice(0, 6).map(t => `
+
+  // Group templates by category, prioritizing AI
+  const aiTemplates = templates.filter(t => t.category === 'AI');
+  const otherTemplates = templates.filter(t => t.category !== 'AI');
+
+  // Show 3 AI templates + 3 other popular ones
+  const featured = [...aiTemplates.slice(0, 3), ...otherTemplates.slice(0, 3)];
+
+  el.innerHTML = featured.map(t => `
     <div class="card" style="cursor: pointer;" onclick="deployTemplate('${t.id}')">
       <div style="display: flex; justify-content: space-between; align-items: start;">
         <div>

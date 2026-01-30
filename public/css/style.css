@@ -1064,11 +1064,24 @@ textarea.form-control {
     top: 0;
     bottom: 0;
     width: 220px;
-    z-index: 50;
+    z-index: 100;
     transition: left 0.2s;
   }
 
   .sidebar.open { left: 0; }
+
+  /* Mobile sidebar backdrop */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+  }
+
+  .sidebar-backdrop.active {
+    display: block;
+  }
 
   .mobile-header {
     display: flex;
@@ -1089,6 +1102,16 @@ textarea.form-control {
 
   .card-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Better table scrolling on mobile */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 600px;
   }
 }
 

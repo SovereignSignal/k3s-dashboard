@@ -543,6 +543,55 @@ const sidebarIcons = {
 };
 
 // ============================================================================
+// Mobile Menu
+// ============================================================================
+function initMobileMenu() {
+  const sidebar = document.querySelector('.sidebar');
+  const menuToggle = document.querySelector('.menu-toggle');
+
+  if (!sidebar || !menuToggle) return;
+
+  // Create backdrop element
+  let backdrop = document.querySelector('.sidebar-backdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.className = 'sidebar-backdrop';
+    document.body.appendChild(backdrop);
+  }
+
+  // Toggle menu
+  menuToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sidebar.classList.toggle('open');
+    backdrop.classList.toggle('active', sidebar.classList.contains('open'));
+  });
+
+  // Close on backdrop click
+  backdrop.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('active');
+  });
+
+  // Close on nav link click (mobile)
+  sidebar.querySelectorAll('.sidebar-nav a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        sidebar.classList.remove('open');
+        backdrop.classList.remove('active');
+      }
+    });
+  });
+
+  // Close on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('active');
+    }
+  });
+}
+
+// ============================================================================
 // Initialization
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -551,6 +600,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize keyboard shortcuts
   initKeyboardShortcuts();
+
+  // Initialize mobile menu
+  initMobileMenu();
 
   // Set active nav link and add icons
   const path = window.location.pathname.replace(/\/$/, '') || '/index.html';
