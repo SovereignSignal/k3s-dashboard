@@ -77,6 +77,39 @@
       </div>
 
       <div class="section-header">
+        <h2>Performance Graphs</h2>
+      </div>
+      <div class="graphs-grid">
+        <div class="graph-card">
+          <div class="graph-header">
+            <h3>CPU Usage</h3>
+            <span class="graph-subtitle">% utilization per node</span>
+          </div>
+          <div class="graph-container">
+            <canvas id="cpu-chart"></canvas>
+          </div>
+        </div>
+        <div class="graph-card">
+          <div class="graph-header">
+            <h3>Memory Usage</h3>
+            <span class="graph-subtitle">% utilization per node</span>
+          </div>
+          <div class="graph-container">
+            <canvas id="memory-chart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="graph-card graph-card-wide">
+        <div class="graph-header">
+          <h3>Network Traffic</h3>
+          <span class="graph-subtitle">bytes/sec per node</span>
+        </div>
+        <div class="graph-container">
+          <canvas id="network-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="section-header">
         <h2>Storage</h2>
         <a href="/storage.html" class="btn btn-sm btn-ghost">View all</a>
       </div>
@@ -105,6 +138,7 @@
       </div>
     </main>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="/js/api.js"></script>
   <script src="/js/dashboard.js"></script>
 </body>

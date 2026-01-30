@@ -6,6 +6,7 @@ const logger = require('./utils/logger');
 const { requireAuth } = require('./middleware/auth');
 const errorHandler = require('./middleware/error-handler');
 const apiRouter = require('./routes/api');
+const metricsCollector = require('./services/metrics-collector');
 
 const app = express();
 
@@ -17,7 +18,7 @@ app.use((_req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'"
+    "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'"
   );
   next();
 });
@@ -81,4 +82,7 @@ app.use(errorHandler);
 
 app.listen(config.port, config.bindAddress, () => {
   logger.info(`K3s Dashboard running on http://${config.bindAddress}:${config.port}`);
+
+  // Start metrics collector
+  metricsCollector.start();
 });

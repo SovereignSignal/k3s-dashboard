@@ -3,16 +3,33 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
   window.location.href = '/login.html';
 });
 
+// Chart instances
+let cpuChart = null;
+let memoryChart = null;
+let networkChart = null;
+
+// Node colors for charts
+const nodeColors = [
+  { border: 'rgb(0, 112, 243)', background: 'rgba(0, 112, 243, 0.1)' },   // accent blue
+  { border: 'rgb(0, 168, 84)', background: 'rgba(0, 168, 84, 0.1)' },     // green
+  { border: 'rgb(139, 92, 246)', background: 'rgba(139, 92, 246, 0.1)' }, // purple
+  { border: 'rgb(245, 166, 35)', background: 'rgba(245, 166, 35, 0.1)' }, // orange
+  { border: 'rgb(238, 0, 0)', background: 'rgba(238, 0, 0, 0.1)' },       // red
+  { border: 'rgb(6, 182, 212)', background: 'rgba(6, 182, 212, 0.1)' },   // cyan
+];
+
 async function loadDashboard() {
   try {
-    const [overview, events, storage, templates] = await Promise.all([
+    const [overview, events, storage, templates, metricsHistory] = await Promise.all([
       api.get('/api/cluster/overview'),
       api.get('/api/cluster/events'),
       api.get('/api/storage/nodes'),
       api.get('/api/templates'),
+      api.get('/api/metrics/history'),
     ]);
     renderSummary(overview);
     renderNodes(overview.nodes.items);
+    renderCharts(metricsHistory);
     renderStorage(storage);
     renderTemplates(templates);
     renderEvents(events);
@@ -166,6 +183,205 @@ function renderEvents(events) {
       <td class="text-sm text-muted">${timeAgo(e.lastTimestamp)}</td>
     </tr>
   `).join('');
+}
+
+// Chart.js configuration
+function getChartConfig(type = 'percentage') {
+  const isDark = getTheme() === 'dark';
+  const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+  const textColor = isDark ? '#a1a1a1' : '#666666';
+
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+      duration: 300,
+    },
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          color: textColor,
+          padding: 15,
+          usePointStyle: true,
+          pointStyle: 'circle',
+        },
+      },
+      tooltip: {
+        backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
+        titleColor: isDark ? '#ededed' : '#171717',
+        bodyColor: isDark ? '#a1a1a1' : '#666666',
+        borderColor: isDark ? '#262626' : '#eaeaea',
+        borderWidth: 1,
+        padding: 12,
+        displayColors: true,
+        callbacks: {
+          label: function(context) {
+            let label = context.dataset.label || '';
+            if (label) label += ': ';
+            if (type === 'percentage') {
+              label += context.parsed.y.toFixed(1) + '%';
+            } else if (type === 'bytes') {
+              label += formatBytesPerSec(context.parsed.y);
+            }
+            return label;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          color: gridColor,
+          drawBorder: false,
+        },
+        ticks: {
+          color: textColor,
+          maxTicksLimit: 6,
+          maxRotation: 0,
+        },
+      },
+      y: {
+        min: 0,
+        max: type === 'percentage' ? 100 : undefined,
+        grid: {
+          color: gridColor,
+          drawBorder: false,
+        },
+        ticks: {
+          color: textColor,
+          callback: function(value) {
+            if (type === 'percentage') return value + '%';
+            return formatBytesPerSec(value);
+          },
+        },
+      },
+    },
+  };
+}
+
+function formatBytesPerSec(bytes) {
+  if (bytes >= 1000000) return (bytes / 1000000).toFixed(1) + ' MB/s';
+  if (bytes >= 1000) return (bytes / 1000).toFixed(0) + ' KB/s';
+  return bytes.toFixed(0) + ' B/s';
+}
+
+function formatTimeLabel(isoString) {
+  const date = new Date(isoString);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderCharts(history) {
+  if (!history || !history.timestamps || history.timestamps.length === 0) {
+    return;
+  }
+
+  const labels = history.timestamps.map(formatTimeLabel);
+  const nodeNames = Object.keys(history.nodes);
+
+  // CPU Chart
+  const cpuCtx = document.getElementById('cpu-chart');
+  if (cpuCtx) {
+    const cpuDatasets = nodeNames.map((name, idx) => ({
+      label: name,
+      data: history.nodes[name].cpu,
+      borderColor: nodeColors[idx % nodeColors.length].border,
+      backgroundColor: nodeColors[idx % nodeColors.length].background,
+      borderWidth: 2,
+      tension: 0.3,
+      fill: true,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+    }));
+
+    if (cpuChart) {
+      cpuChart.data.labels = labels;
+      cpuChart.data.datasets = cpuDatasets;
+      cpuChart.options = getChartConfig('percentage');
+      cpuChart.update('none');
+    } else {
+      cpuChart = new Chart(cpuCtx, {
+        type: 'line',
+        data: { labels, datasets: cpuDatasets },
+        options: getChartConfig('percentage'),
+      });
+    }
+  }
+
+  // Memory Chart
+  const memCtx = document.getElementById('memory-chart');
+  if (memCtx) {
+    const memDatasets = nodeNames.map((name, idx) => ({
+      label: name,
+      data: history.nodes[name].memory,
+      borderColor: nodeColors[idx % nodeColors.length].border,
+      backgroundColor: nodeColors[idx % nodeColors.length].background,
+      borderWidth: 2,
+      tension: 0.3,
+      fill: true,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+    }));
+
+    if (memoryChart) {
+      memoryChart.data.labels = labels;
+      memoryChart.data.datasets = memDatasets;
+      memoryChart.options = getChartConfig('percentage');
+      memoryChart.update('none');
+    } else {
+      memoryChart = new Chart(memCtx, {
+        type: 'line',
+        data: { labels, datasets: memDatasets },
+        options: getChartConfig('percentage'),
+      });
+    }
+  }
+
+  // Network Chart
+  const netCtx = document.getElementById('network-chart');
+  if (netCtx) {
+    const netDatasets = [];
+    nodeNames.forEach((name, idx) => {
+      netDatasets.push({
+        label: `${name} RX`,
+        data: history.nodes[name].networkRx,
+        borderColor: nodeColors[idx % nodeColors.length].border,
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+      });
+      netDatasets.push({
+        label: `${name} TX`,
+        data: history.nodes[name].networkTx,
+        borderColor: nodeColors[idx % nodeColors.length].border,
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        borderDash: [5, 5],
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+      });
+    });
+
+    if (networkChart) {
+      networkChart.data.labels = labels;
+      networkChart.data.datasets = netDatasets;
+      networkChart.options = getChartConfig('bytes');
+      networkChart.update('none');
+    } else {
+      networkChart = new Chart(netCtx, {
+        type: 'line',
+        data: { labels, datasets: netDatasets },
+        options: getChartConfig('bytes'),
+      });
+    }
+  }
 }
 
 loadDashboard();

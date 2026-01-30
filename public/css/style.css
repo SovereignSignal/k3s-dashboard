@@ -1620,3 +1620,69 @@ kbd {
   background: var(--bg-tertiary);
   color: var(--text-primary);
 }
+
+/* Performance Graphs */
+.graphs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.graph-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.graph-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow);
+}
+
+.graph-card-wide {
+  margin-bottom: 1.5rem;
+}
+
+.graph-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.graph-header h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.graph-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.graph-container {
+  position: relative;
+  height: 200px;
+}
+
+.graph-card-wide .graph-container {
+  height: 250px;
+}
+
+@media (max-width: 768px) {
+  .graphs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-container {
+    height: 180px;
+  }
+
+  .graph-card-wide .graph-container {
+    height: 200px;
+  }
+}

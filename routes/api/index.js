@@ -19,5 +19,6 @@ router.use('/network', require('./network'));
 router.use('/alerts', require('./alerts'));
 router.use('/templates', require('./templates'));
 router.use('/apply', require('./apply'));
+router.use('/metrics', require('./metrics'));
 
 module.exports = router;
