@@ -182,6 +182,7 @@ const commandPalette = {
       { id: 'workloads', title: 'Go to Workloads', desc: 'Manage deployments & pods', icon: 'layers', action: () => window.location.href = '/workloads.html', group: 'Navigation' },
       { id: 'storage', title: 'Go to Storage', desc: 'Manage volumes & classes', icon: 'database', action: () => window.location.href = '/storage.html', group: 'Navigation' },
       { id: 'network', title: 'Go to Network', desc: 'Network monitoring', icon: 'activity', action: () => window.location.href = '/network.html', group: 'Navigation' },
+      { id: 'devices', title: 'Go to Devices', desc: 'LAN device inventory', icon: 'monitor', action: () => window.location.href = '/devices.html', group: 'Navigation' },
       { id: 'alerts', title: 'Go to Alerts', desc: 'View cluster alerts', icon: 'bell', action: () => window.location.href = '/alerts.html', group: 'Navigation' },
       { id: 'namespaces', title: 'Go to Namespaces', desc: 'Manage namespaces', icon: 'folder', action: () => window.location.href = '/namespaces.html', group: 'Navigation' },
       { id: 'deploy', title: 'Deploy YAML', desc: 'Apply Kubernetes manifests', icon: 'upload', action: () => window.location.href = '/deploy.html', group: 'Actions' },
@@ -340,6 +341,7 @@ const commandPalette = {
       terminal: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
       sun: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
       'log-out': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+      monitor: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
     };
     return icons[name] || '';
   },
@@ -464,6 +466,7 @@ function initKeyboardShortcuts() {
           'w': '/workloads.html', // g+w = workloads
           's': '/storage.html',   // g+s = storage
           'e': '/network.html',   // g+e = network (endpoints)
+          'i': '/devices.html',   // g+i = devices (inventory)
           'a': '/alerts.html',    // g+a = alerts
           'd': '/deploy.html',    // g+d = deploy
           'l': '/logs.html',      // g+l = logs
@@ -505,6 +508,7 @@ function showKeyboardHelp() {
           <div><kbd>g</kbd> <kbd>w</kbd></div><div>Go to Workloads</div>
           <div><kbd>g</kbd> <kbd>s</kbd></div><div>Go to Storage</div>
           <div><kbd>g</kbd> <kbd>e</kbd></div><div>Go to Network</div>
+          <div><kbd>g</kbd> <kbd>i</kbd></div><div>Go to Devices</div>
           <div><kbd>g</kbd> <kbd>a</kbd></div><div>Go to Alerts</div>
           <div><kbd>g</kbd> <kbd>d</kbd></div><div>Go to Deploy</div>
           <div><kbd>g</kbd> <kbd>l</kbd></div><div>Go to Logs</div>
@@ -535,6 +539,7 @@ const sidebarIcons = {
   workloads: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
   storage: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
   network: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+  devices: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
   alerts: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
   namespaces: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>',
   deploy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
@@ -548,36 +553,50 @@ const sidebarIcons = {
 function initMobileMenu() {
   const sidebar = document.querySelector('.sidebar');
   const menuToggle = document.querySelector('.menu-toggle');
+  const backdrop = document.querySelector('.sidebar-backdrop');
 
   if (!sidebar || !menuToggle) return;
 
-  // Create backdrop element
-  let backdrop = document.querySelector('.sidebar-backdrop');
-  if (!backdrop) {
-    backdrop = document.createElement('div');
-    backdrop.className = 'sidebar-backdrop';
-    document.body.appendChild(backdrop);
+  // Function to close menu
+  function closeMenu() {
+    sidebar.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.style.overflow = '';
   }
 
-  // Toggle menu
+  // Function to open menu
+  function openMenu() {
+    sidebar.classList.add('open');
+    if (backdrop) backdrop.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Function to toggle menu
+  function toggleMenu() {
+    if (sidebar.classList.contains('open')) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  }
+
+  // Toggle menu on button click
   menuToggle.addEventListener('click', (e) => {
+    e.preventDefault();
     e.stopPropagation();
-    sidebar.classList.toggle('open');
-    backdrop.classList.toggle('active', sidebar.classList.contains('open'));
+    toggleMenu();
   });
 
   // Close on backdrop click
-  backdrop.addEventListener('click', () => {
-    sidebar.classList.remove('open');
-    backdrop.classList.remove('active');
-  });
+  if (backdrop) {
+    backdrop.addEventListener('click', closeMenu);
+  }
 
   // Close on nav link click (mobile)
   sidebar.querySelectorAll('.sidebar-nav a').forEach(link => {
     link.addEventListener('click', () => {
       if (window.innerWidth <= 768) {
-        sidebar.classList.remove('open');
-        backdrop.classList.remove('active');
+        closeMenu();
       }
     });
   });
@@ -585,8 +604,14 @@ function initMobileMenu() {
   // Close on escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && sidebar.classList.contains('open')) {
-      sidebar.classList.remove('open');
-      backdrop.classList.remove('active');
+      closeMenu();
+    }
+  });
+
+  // Close menu on window resize if larger than mobile
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768 && sidebar.classList.contains('open')) {
+      closeMenu();
     }
   });
 }

@@ -11,9 +11,10 @@
 </head>
 <body>
   <div class="mobile-header">
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <button class="menu-toggle" aria-label="Toggle navigation menu">&#9776;</button>
     <span>K3s Dashboard</span>
   </div>
+  <div class="sidebar-backdrop"></div>
   <div class="app-layout">
     <nav class="sidebar">
       <div class="sidebar-brand">
@@ -36,6 +37,7 @@
         <a href="/workloads.html" data-icon="workloads">Workloads</a>
         <a href="/storage.html" data-icon="storage">Storage</a>
         <a href="/network.html" data-icon="network">Network</a>
+        <a href="/devices.html" data-icon="devices">Devices</a>
         <a href="/alerts.html" data-icon="alerts">Alerts</a>
         <a href="/namespaces.html" data-icon="namespaces">Namespaces</a>
         <a href="/deploy.html" data-icon="deploy">Deploy</a>
@@ -84,7 +86,7 @@
               <option value="5000">5000</option>
             </select>
           </div>
-          <button class="btn btn-primary" onclick="fetchLogs()" style="margin-top: 1.5rem;">
+          <button class="btn btn-primary" id="fetch-logs-btn" style="margin-top: 1.5rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
             </svg>

@@ -16,6 +16,7 @@ router.use('/deployments', require('./deployments'));
 router.use('/namespaces', require('./namespaces'));
 router.use('/storage', require('./storage'));
 router.use('/network', require('./network'));
+router.use('/devices', require('./devices'));
 router.use('/alerts', require('./alerts'));
 router.use('/templates', require('./templates'));
 router.use('/apply', require('./apply'));

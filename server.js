@@ -7,6 +7,7 @@ const { requireAuth } = require('./middleware/auth');
 const errorHandler = require('./middleware/error-handler');
 const apiRouter = require('./routes/api');
 const metricsCollector = require('./services/metrics-collector');
+const deviceMonitor = require('./services/device-monitor');
 
 const app = express();
 
@@ -85,4 +86,7 @@ app.listen(config.port, config.bindAddress, () => {
 
   // Start metrics collector
   metricsCollector.start();
+
+  // Start device monitor
+  deviceMonitor.start();
 });

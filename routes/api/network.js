@@ -8,6 +8,7 @@ const os = require('os');
 const k8s = require('@kubernetes/client-node');
 const config = require('../../config');
 const logger = require('../../utils/logger');
+const { discoverDevices } = require('../../utils/network-discovery');
 
 // File path for storing discovered devices
 const DEVICES_FILE = path.join(__dirname, '../../data/network-devices.json');
@@ -279,113 +280,9 @@ router.get('/info', async (req, res, next) => {
 // Discover devices on the network using ARP and optional nmap
 router.get('/discover', async (req, res, next) => {
   try {
-    const devices = {};
+    const thorough = req.query.thorough === 'true';
+    const { devices, localIP, subnet } = await discoverDevices({ thorough });
     const now = Date.now();
-
-    // First, ping sweep the subnet to populate ARP cache
-    // Get the local subnet
-    const interfaces = os.networkInterfaces();
-    let localIP = null;
-    let subnet = null;
-
-    for (const [name, addrs] of Object.entries(interfaces)) {
-      if (name === 'lo') continue;
-      for (const addr of addrs) {
-        if (addr.family === 'IPv4' && !addr.internal) {
-          localIP = addr.address;
-          const ipParts = addr.address.split('.');
-          subnet = `${ipParts[0]}.${ipParts[1]}.${ipParts[2]}`;
-          break;
-        }
-      }
-      if (subnet) break;
-    }
-
-    if (!subnet) {
-      return res.status(500).json({ error: 'Could not determine local subnet' });
-    }
-
-    // Quick ARP-based discovery first (existing entries)
-    try {
-      const { stdout } = await execAsync('ip neighbor show | grep -v FAILED');
-      const lines = stdout.trim().split('\n').filter(Boolean);
-
-      for (const line of lines) {
-        const parts = line.split(/\s+/);
-        const ip = parts[0];
-        const macIndex = parts.indexOf('lladdr');
-        const mac = macIndex !== -1 ? parts[macIndex + 1]?.toUpperCase() : null;
-        const state = parts[parts.length - 1];
-
-        if (ip && mac && ip.startsWith(subnet.split('.').slice(0, 2).join('.'))) {
-          devices[ip] = {
-            ip,
-            mac,
-            state: state === 'REACHABLE' || state === 'STALE' ? 'online' : 'offline',
-            lastSeen: now,
-            hostname: null,
-            vendor: null,
-          };
-        }
-      }
-    } catch {}
-
-    // Try nmap for more thorough discovery if available
-    const useNmap = req.query.thorough === 'true';
-    if (useNmap) {
-      try {
-        // Quick ping scan with nmap
-        const { stdout } = await execAsync(`nmap -sn ${subnet}.0/24 -oG - 2>/dev/null | grep "Host:"`, { timeout: 60000 });
-        const lines = stdout.trim().split('\n').filter(Boolean);
-
-        for (const line of lines) {
-          const ipMatch = line.match(/Host:\s+([\d.]+)/);
-          if (ipMatch) {
-            const ip = ipMatch[1];
-            if (!devices[ip]) {
-              devices[ip] = {
-                ip,
-                mac: null,
-                state: 'online',
-                lastSeen: now,
-                hostname: null,
-                vendor: null,
-              };
-            } else {
-              devices[ip].state = 'online';
-              devices[ip].lastSeen = now;
-            }
-          }
-        }
-      } catch (e) {
-        // nmap not available or failed, continue with ARP results
-        logger.debug('nmap scan failed or unavailable:', e.message);
-      }
-    }
-
-    // Try to resolve hostnames via DNS
-    for (const ip of Object.keys(devices)) {
-      try {
-        const { stdout } = await execAsync(`getent hosts ${ip} | awk '{print $2}'`, { timeout: 2000 });
-        const hostname = stdout.trim();
-        if (hostname && hostname !== ip) {
-          devices[ip].hostname = hostname;
-        }
-      } catch {}
-    }
-
-    // Try reverse DNS
-    for (const ip of Object.keys(devices)) {
-      if (!devices[ip].hostname) {
-        try {
-          const { stdout } = await execAsync(`host ${ip} 2>/dev/null | grep "domain name pointer" | awk '{print $NF}' | sed 's/\\.$//'`, { timeout: 2000 });
-          const hostname = stdout.trim();
-          if (hostname) {
-            devices[ip].hostname = hostname;
-          }
-        } catch {}
-      }
-    }
 
     // Load previously saved data and merge
     const saved = await loadDevices();

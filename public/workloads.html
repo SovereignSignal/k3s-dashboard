@@ -11,9 +11,10 @@
 </head>
 <body>
   <div class="mobile-header">
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <button class="menu-toggle" aria-label="Toggle navigation menu">&#9776;</button>
     <span>K3s Dashboard</span>
   </div>
+  <div class="sidebar-backdrop"></div>
   <div class="app-layout">
     <nav class="sidebar">
       <div class="sidebar-brand">
@@ -36,6 +37,7 @@
         <a href="/workloads.html" data-icon="workloads">Workloads</a>
         <a href="/storage.html" data-icon="storage">Storage</a>
         <a href="/network.html" data-icon="network">Network</a>
+        <a href="/devices.html" data-icon="devices">Devices</a>
         <a href="/alerts.html" data-icon="alerts">Alerts</a>
         <a href="/namespaces.html" data-icon="namespaces">Namespaces</a>
         <a href="/deploy.html" data-icon="deploy">Deploy</a>
