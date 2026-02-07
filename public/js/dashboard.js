@@ -20,18 +20,19 @@ const nodeColors = [
 
 async function loadDashboard() {
   try {
-    const [overview, events, storage, templates, metricsHistory] = await Promise.all([
+    const [overview, events, storage, templates, metricsHistory, installedApps] = await Promise.all([
       api.get('/api/cluster/overview'),
       api.get('/api/cluster/events'),
       api.get('/api/storage/nodes'),
       api.get('/api/templates'),
       api.get('/api/metrics/history'),
+      api.get('/api/apps').catch(() => []),
     ]);
     renderSummary(overview);
     renderNodes(overview.nodes.items);
     renderCharts(metricsHistory);
     renderStorage(storage);
-    renderTemplates(templates);
+    renderTemplates(templates, installedApps);
     renderEvents(events);
   } catch (err) {
     showAlert(document.querySelector('.main-content'), err.message);
@@ -130,29 +131,37 @@ function renderStorage(nodes) {
   `;
 }
 
-function renderTemplates(templates) {
+function renderTemplates(templates, installedApps) {
   const el = document.getElementById('template-cards');
+
+  // Build set of installed template IDs
+  const installedSet = new Set((installedApps || []).map(a => a.templateId));
 
   // Group templates by category, prioritizing AI
   const aiTemplates = templates.filter(t => t.category === 'AI');
   const otherTemplates = templates.filter(t => t.category !== 'AI');
 
-  // Show 3 AI templates + 3 other popular ones
-  const featured = [...aiTemplates.slice(0, 3), ...otherTemplates.slice(0, 3)];
+  // Show all AI templates + 2 popular infrastructure ones
+  const featured = [...aiTemplates, ...otherTemplates.slice(0, 2)];
 
-  el.innerHTML = featured.map(t => `
-    <div class="card" style="cursor: pointer;" onclick="deployTemplate('${t.id}')">
-      <div style="display: flex; justify-content: space-between; align-items: start;">
-        <div>
-          <div class="card-title">${t.category}</div>
-          <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem;">${t.name}</div>
-          <div class="text-sm text-muted">${t.description}</div>
+  el.innerHTML = featured.map(t => {
+    const badge = installedSet.has(t.id)
+      ? '<span class="status-badge status-ready" style="font-size: 0.7rem;">Installed</span>'
+      : '';
+    return `
+      <div class="card card-clickable" onclick="deployTemplate('${t.id}')">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+          <div>
+            <div class="card-title">${t.category} ${badge}</div>
+            <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem;">${t.name}</div>
+            <div class="text-sm text-muted">${t.description}</div>
+          </div>
+          <span style="font-size: 1.5rem;">${t.icon || ''}</span>
         </div>
-        <span style="font-size: 1.5rem;">${t.icon || '📦'}</span>
       </div>
-    </div>
-  `).join('') + `
-    <div class="card" style="cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="window.location.href='/deploy.html'">
+    `;
+  }).join('') + `
+    <div class="card card-clickable" onclick="window.location.href='/deploy.html'" style="display: flex; align-items: center; justify-content: center;">
       <div class="text-muted" style="text-align: center;">
         <div style="font-size: 1.5rem;">+</div>
         <div class="text-sm">Custom YAML</div>
@@ -162,9 +171,25 @@ function renderTemplates(templates) {
 }
 
 async function deployTemplate(templateId) {
-  if (!confirm('Deploy this template to the cluster?')) return;
   try {
-    const res = await api.post(`/api/templates/${templateId}/deploy`);
+    // Fetch full template details to check for config
+    const template = await api.get(`/api/templates/${templateId}`);
+
+    if (template.config && template.config.length > 0) {
+      showTemplateConfigModal(template);
+    } else {
+      // No config - use simple confirm
+      if (!confirm('Deploy this template to the cluster?')) return;
+      await executeTemplateDeploy(templateId);
+    }
+  } catch (err) {
+    showAlert(document.querySelector('.main-content'), err.message, 'error');
+  }
+}
+
+async function executeTemplateDeploy(templateId, config = {}) {
+  try {
+    const res = await api.post(`/api/templates/${templateId}/deploy`, { config });
     if (res.error) {
       showAlert(document.querySelector('.main-content'), res.error, 'error');
       return;
@@ -174,6 +199,94 @@ async function deployTemplate(templateId) {
   } catch (err) {
     showAlert(document.querySelector('.main-content'), err.message, 'error');
   }
+}
+
+function showTemplateConfigModal(template) {
+  // Remove any existing modal
+  const existing = document.getElementById('template-config-modal');
+  if (existing) existing.remove();
+
+  // Build form fields
+  const fields = template.config.map(item => {
+    let input;
+    if (item.type === 'select') {
+      const options = item.options.map(opt => {
+        if (typeof opt === 'string') {
+          return `<option value="${opt}" ${opt === item.default ? 'selected' : ''}>${opt}</option>`;
+        }
+        return `<option value="${opt.value}" ${opt.value === item.default ? 'selected' : ''}>${opt.label}</option>`;
+      }).join('');
+      input = `<select class="form-control" name="${item.id}">${options}</select>`;
+    } else if (item.type === 'number') {
+      input = `<input type="number" class="form-control" name="${item.id}" value="${item.default}">`;
+    } else {
+      input = `<input type="text" class="form-control" name="${item.id}" value="${item.default}">`;
+    }
+    const hint = item.hint ? `<div class="hint">${item.hint}</div>` : '';
+    return `<div class="form-group"><label>${item.label}</label>${input}${hint}</div>`;
+  }).join('');
+
+  const modalHTML = `
+    <div class="modal-overlay active" id="template-config-modal">
+      <div class="modal modal-config">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="modal-icon">${template.icon || '📦'}</span>
+            <div>
+              <h3>${template.name}</h3>
+              <div class="modal-subtitle">${template.description}</div>
+            </div>
+          </div>
+          <div class="modal-close" onclick="closeConfigModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </div>
+        </div>
+        <div class="modal-body">
+          <form id="template-config-form">
+            ${fields}
+          </form>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" onclick="closeConfigModal()">Cancel</button>
+          <button type="button" class="btn btn-accent" onclick="submitTemplateConfig('${template.id}')">Deploy</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+  // Focus first input
+  const firstInput = document.querySelector('#template-config-form input, #template-config-form select');
+  if (firstInput) firstInput.focus();
+
+  // Handle Escape key
+  document.getElementById('template-config-modal').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeConfigModal();
+  });
+
+  // Close on backdrop click
+  document.getElementById('template-config-modal').addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay')) closeConfigModal();
+  });
+}
+
+function closeConfigModal() {
+  const modal = document.getElementById('template-config-modal');
+  if (modal) modal.remove();
+}
+
+async function submitTemplateConfig(templateId) {
+  const form = document.getElementById('template-config-form');
+  const formData = new FormData(form);
+  const config = {};
+  for (const [key, value] of formData.entries()) {
+    config[key] = value;
+  }
+  closeConfigModal();
+  await executeTemplateDeploy(templateId, config);
 }
 
 function renderEvents(events) {

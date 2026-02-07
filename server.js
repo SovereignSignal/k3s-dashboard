@@ -8,6 +8,9 @@ const errorHandler = require('./middleware/error-handler');
 const apiRouter = require('./routes/api');
 const metricsCollector = require('./services/metrics-collector');
 const deviceMonitor = require('./services/device-monitor');
+const appManager = require('./services/app-manager');
+const k8s = require('./services/k8s-client');
+const { templates } = require('./routes/api/templates');
 
 const app = express();
 
@@ -89,4 +92,7 @@ app.listen(config.port, config.bindAddress, () => {
 
   // Start device monitor
   deviceMonitor.start();
+
+  // Start app manager
+  appManager.start(templates, k8s);
 });

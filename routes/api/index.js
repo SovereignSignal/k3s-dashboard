@@ -19,6 +19,7 @@ router.use('/network', require('./network'));
 router.use('/devices', require('./devices'));
 router.use('/alerts', require('./alerts'));
 router.use('/templates', require('./templates'));
+router.use('/apps', require('./apps'));
 router.use('/apply', require('./apply'));
 router.use('/metrics', require('./metrics'));
 router.use('/backroom', require('./backroom'));

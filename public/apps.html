@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0a0a0a">
-  <title>Nodes - K3s Dashboard</title>
+  <title>Apps - K3s Dashboard</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,30 +53,62 @@
     <main class="main-content">
       <div class="page-header">
         <div>
-          <h1>Nodes</h1>
-          <p class="page-subtitle">Cluster node status and metrics</p>
+          <h1>Installed Apps</h1>
+          <p class="page-subtitle">Manage template-deployed applications</p>
         </div>
         <div class="page-header-actions">
-          <button class="btn" onclick="loadNodes()">
+          <button class="btn" onclick="loadApps()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M23 4v6h-6M1 20v-6h6"/>
               <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
             </svg>
             Refresh
           </button>
+          <a href="/deploy.html" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Deploy New
+          </a>
         </div>
       </div>
-      <div id="nodes-container">
-        <div class="card-grid">
-          <div class="card skeleton skeleton-card"></div>
-          <div class="card skeleton skeleton-card"></div>
-          <div class="card skeleton skeleton-card"></div>
-          <div class="card skeleton skeleton-card"></div>
-        </div>
+
+      <div class="grid grid-4" id="summary-cards">
+        <div class="card"><div class="card-title">Loading...</div></div>
+      </div>
+
+      <div id="apps-grid" class="mt-2">
+        <div class="loading-state"><span class="spinner"></span><p>Loading apps...</p></div>
       </div>
     </main>
   </div>
+
+  <!-- Scale Modal -->
+  <div class="modal-overlay" id="scale-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Scale App</h3>
+        <div class="modal-close" role="button" aria-label="Close" onclick="closeScaleModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </div>
+      </div>
+      <div class="modal-body">
+        <p class="text-secondary" id="scale-app-name"></p>
+        <div class="form-group mt-2">
+          <label>Replicas</label>
+          <input type="number" class="form-control" id="scale-replicas" min="0" max="50">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeScaleModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="doScale()">Scale</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/api.js"></script>
-  <script src="/js/nodes.js"></script>
+  <script src="/js/apps.js"></script>
 </body>
 </html>

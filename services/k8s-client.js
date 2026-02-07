@@ -111,6 +111,37 @@ async function scaleDeployment(namespace, name, replicas) {
   return appsApi.replaceNamespacedDeploymentScale({ name, namespace, body: scale });
 }
 
+// ---- Services ----
+
+async function deleteService(namespace, name) {
+  return coreApi.deleteNamespacedService({ name, namespace });
+}
+
+// ---- PVCs ----
+
+async function deletePVC(namespace, name) {
+  return coreApi.deleteNamespacedPersistentVolumeClaim({ name, namespace });
+}
+
+// ---- ConfigMaps ----
+
+async function deleteConfigMap(namespace, name) {
+  return coreApi.deleteNamespacedConfigMap({ name, namespace });
+}
+
+// ---- Resource dispatcher ----
+
+async function deleteResource(kind, namespace, name) {
+  switch (kind) {
+    case 'Deployment': return deleteDeployment(namespace, name);
+    case 'Service': return deleteService(namespace, name);
+    case 'PersistentVolumeClaim': return deletePVC(namespace, name);
+    case 'ConfigMap': return deleteConfigMap(namespace, name);
+    default:
+      throw new Error(`Unsupported resource kind: ${kind}`);
+  }
+}
+
 // ---- Namespaces ----
 
 async function listNamespaces() {
@@ -248,6 +279,10 @@ module.exports = {
   createDeployment,
   deleteDeployment,
   scaleDeployment,
+  deleteService,
+  deletePVC,
+  deleteConfigMap,
+  deleteResource,
   listNamespaces,
   createNamespace,
   deleteNamespace,

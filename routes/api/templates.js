@@ -1,7 +1,45 @@
 const { Router } = require('express');
 const k8s = require('../../services/k8s-client');
+const appManager = require('../../services/app-manager');
 
 const router = Router();
+
+// Helper to inject tracking labels/annotations into manifests
+function injectLabels(manifest, templateId, instanceId) {
+  if (!manifest.metadata) manifest.metadata = {};
+  if (!manifest.metadata.labels) manifest.metadata.labels = {};
+  if (!manifest.metadata.annotations) manifest.metadata.annotations = {};
+
+  manifest.metadata.labels['app.kubernetes.io/managed-by'] = 'k3s-dashboard';
+  manifest.metadata.annotations['k3s-dashboard/template-id'] = templateId;
+  manifest.metadata.annotations['k3s-dashboard/instance-id'] = instanceId;
+
+  // Also inject into pod template if this is a Deployment
+  if (manifest.kind === 'Deployment' && manifest.spec?.template?.metadata) {
+    if (!manifest.spec.template.metadata.labels) manifest.spec.template.metadata.labels = {};
+    manifest.spec.template.metadata.labels['app.kubernetes.io/managed-by'] = 'k3s-dashboard';
+  }
+
+  return manifest;
+}
+
+// Helper to substitute {{PLACEHOLDER}} values in manifest objects
+function substituteConfig(obj, values) {
+  if (typeof obj === 'string') {
+    return obj.replace(/\{\{(\w+)\}\}/g, (_, key) =>
+      values.hasOwnProperty(key) ? values[key] : `{{${key}}}`
+    );
+  }
+  if (Array.isArray(obj)) return obj.map(item => substituteConfig(item, values));
+  if (obj && typeof obj === 'object') {
+    const result = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = substituteConfig(value, values);
+    }
+    return result;
+  }
+  return obj;
+}
 
 // Deployment templates - useful apps for a home/lab k3s cluster
 const templates = [
@@ -850,12 +888,151 @@ scrape_configs:
       },
     ],
   },
+  {
+    id: 'minecraft',
+    name: 'Minecraft Java Server',
+    category: 'Gaming',
+    description: 'Paper server with auto-updates and persistent world',
+    icon: '🎮',
+    config: [
+      {
+        id: 'SERVER_NAME',
+        label: 'Server Name (MOTD)',
+        type: 'text',
+        default: 'K3s Minecraft',
+      },
+      {
+        id: 'MEMORY',
+        label: 'Memory',
+        type: 'select',
+        default: '1G',
+        options: [
+          { value: '512M', label: '512 MB (1-2 players)' },
+          { value: '1G', label: '1 GB (3-5 players)' },
+          { value: '2G', label: '2 GB (5-10 players)' },
+        ],
+      },
+      {
+        id: 'DIFFICULTY',
+        label: 'Difficulty',
+        type: 'select',
+        default: 'normal',
+        options: ['peaceful', 'easy', 'normal', 'hard'],
+      },
+      {
+        id: 'GAMEMODE',
+        label: 'Game Mode',
+        type: 'select',
+        default: 'survival',
+        options: ['survival', 'creative', 'adventure'],
+      },
+      {
+        id: 'MAX_PLAYERS',
+        label: 'Max Players',
+        type: 'select',
+        default: '10',
+        options: ['5', '10', '20'],
+      },
+      {
+        id: 'VIEW_DISTANCE',
+        label: 'View Distance',
+        type: 'select',
+        default: '10',
+        options: [
+          { value: '6', label: '6 chunks (better perf)' },
+          { value: '8', label: '8 chunks' },
+          { value: '10', label: '10 chunks (default)' },
+          { value: '12', label: '12 chunks' },
+        ],
+      },
+      {
+        id: 'NODE_PORT',
+        label: 'Port',
+        type: 'select',
+        default: '30565',
+        options: ['30565', '30566', '30567', '30568'],
+        hint: 'Connect via any-node-ip:port',
+      },
+    ],
+    manifests: [
+      {
+        apiVersion: 'v1',
+        kind: 'PersistentVolumeClaim',
+        metadata: { name: 'minecraft-data', namespace: 'default' },
+        spec: {
+          storageClassName: 'local-path',
+          accessModes: ['ReadWriteOnce'],
+          resources: { requests: { storage: '10Gi' } },
+        },
+      },
+      {
+        apiVersion: 'apps/v1',
+        kind: 'Deployment',
+        metadata: { name: 'minecraft', namespace: 'default' },
+        spec: {
+          replicas: 1,
+          strategy: { type: 'Recreate' },
+          selector: { matchLabels: { app: 'minecraft' } },
+          template: {
+            metadata: { labels: { app: 'minecraft' } },
+            spec: {
+              containers: [{
+                name: 'minecraft',
+                image: 'itzg/minecraft-server:latest',
+                ports: [{ containerPort: 25565, name: 'minecraft' }],
+                env: [
+                  { name: 'EULA', value: 'TRUE' },
+                  { name: 'TYPE', value: 'PAPER' },
+                  { name: 'VERSION', value: 'LATEST' },
+                  { name: 'MOTD', value: '{{SERVER_NAME}}' },
+                  { name: 'MEMORY', value: '{{MEMORY}}' },
+                  { name: 'DIFFICULTY', value: '{{DIFFICULTY}}' },
+                  { name: 'MODE', value: '{{GAMEMODE}}' },
+                  { name: 'MAX_PLAYERS', value: '{{MAX_PLAYERS}}' },
+                  { name: 'VIEW_DISTANCE', value: '{{VIEW_DISTANCE}}' },
+                ],
+                volumeMounts: [{ name: 'data', mountPath: '/data' }],
+                resources: {
+                  requests: { cpu: '500m', memory: '{{CONTAINER_MEMORY}}' },
+                  limits: { cpu: '2', memory: '{{CONTAINER_MEMORY}}' },
+                },
+                readinessProbe: {
+                  exec: { command: ['mc-health'] },
+                  initialDelaySeconds: 120,
+                  periodSeconds: 10,
+                  failureThreshold: 5,
+                },
+                livenessProbe: {
+                  exec: { command: ['mc-health'] },
+                  initialDelaySeconds: 300,
+                  periodSeconds: 30,
+                  failureThreshold: 5,
+                },
+              }],
+              volumes: [{ name: 'data', persistentVolumeClaim: { claimName: 'minecraft-data' } }],
+            },
+          },
+        },
+      },
+      {
+        apiVersion: 'v1',
+        kind: 'Service',
+        metadata: { name: 'minecraft', namespace: 'default' },
+        spec: {
+          selector: { app: 'minecraft' },
+          ports: [{ port: 25565, targetPort: 25565, nodePort: '{{NODE_PORT}}' }],
+          type: 'NodePort',
+        },
+      },
+    ],
+  },
 ];
 
 // List all templates
 router.get('/', (req, res) => {
-  const list = templates.map(({ id, name, category, description, icon }) => ({
+  const list = templates.map(({ id, name, category, description, icon, config }) => ({
     id, name, category, description, icon,
+    hasConfig: !!(config && config.length),
   }));
   res.json(list);
 });
@@ -877,14 +1054,51 @@ router.post('/:id/deploy', async (req, res, next) => {
       return res.status(404).json({ error: 'Template not found' });
     }
 
+    // Build config values from defaults + request body
+    const configValues = {};
+    if (template.config) {
+      for (const item of template.config) {
+        configValues[item.id] = req.body.config?.[item.id] ?? item.default;
+      }
+    }
+
+    // Compute derived values (e.g. container memory = JVM heap + overhead)
+    if (configValues.MEMORY) {
+      const memoryOverhead = { '512M': '1Gi', '1G': '1536Mi', '2G': '2560Mi' };
+      configValues.CONTAINER_MEMORY = memoryOverhead[configValues.MEMORY] || '1536Mi';
+    }
+
+    const instanceId = `${template.id}-${Date.now()}`;
     const results = [];
+    const resources = [];
+
     for (const manifest of template.manifests) {
       try {
-        const result = await k8s.applyManifest(manifest);
+        // Deep clone and substitute config values
+        let processed = substituteConfig(JSON.parse(JSON.stringify(manifest)), configValues);
+
+        // Inject tracking labels
+        processed = injectLabels(processed, template.id, instanceId);
+
+        // Convert nodePort string to number if present
+        if (processed.spec?.ports) {
+          for (const port of processed.spec.ports) {
+            if (typeof port.nodePort === 'string') {
+              port.nodePort = parseInt(port.nodePort, 10);
+            }
+          }
+        }
+
+        const result = await k8s.applyManifest(processed);
         results.push({
-          kind: manifest.kind,
-          name: manifest.metadata.name,
+          kind: processed.kind,
+          name: processed.metadata.name,
           action: result.action,
+        });
+        resources.push({
+          kind: processed.kind,
+          name: processed.metadata.name,
+          namespace: processed.metadata.namespace || 'default',
         });
       } catch (err) {
         results.push({
@@ -896,9 +1110,23 @@ router.post('/:id/deploy', async (req, res, next) => {
       }
     }
 
+    // Register app if any resources succeeded
+    if (resources.length > 0) {
+      appManager.registerApp({
+        templateId: template.id,
+        templateName: template.name,
+        icon: template.icon,
+        namespace: template.manifests[0]?.metadata?.namespace || 'default',
+        configValues,
+        resources,
+        instanceId,
+      });
+    }
+
     const hasErrors = results.some((r) => r.action === 'error');
     res.status(hasErrors ? 207 : 200).json({
       template: template.id,
+      instanceId,
       results,
     });
   } catch (err) {
@@ -907,3 +1135,5 @@ router.post('/:id/deploy', async (req, res, next) => {
 });
 
 module.exports = router;
+module.exports.templates = templates;
+module.exports.substituteConfig = substituteConfig;
