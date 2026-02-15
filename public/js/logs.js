@@ -91,3 +91,6 @@ async function fetchLogs() {
 }
 
 init();
+
+// Fetch logs button event listener
+document.getElementById('fetch-logs-btn').addEventListener('click', fetchLogs);

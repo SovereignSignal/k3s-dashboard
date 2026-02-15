@@ -4,12 +4,21 @@ A lightweight web dashboard for managing a Raspberry Pi k3s cluster. Built with 
 
 ## Features
 
-- **Cluster Overview** - Real-time nodes, pods, deployments, and health status
-- **Node & Workload Management** - View, scale, and delete resources
-- **Storage & Network Monitoring** - SD/SSD metrics, traffic stats, connectivity
-- **Alerting** - Configurable alerts for node issues, resource usage, pod crashes
-- **YAML Deploy** - Apply manifests and quick-deploy common apps
-- **Dark/Light Theme** - Toggle with preference persistence
+- **Cluster Overview** — Real-time node status, pod counts, deployments, and resource usage with CPU/memory graphs
+- **Node Management** — Detailed per-node view with hardware info, conditions, and resource metrics
+- **Workloads** — View, scale, restart, and delete deployments and pods across namespaces
+- **Storage** — PersistentVolumes, PersistentVolumeClaims, and StorageClass management
+- **Network** — LAN device discovery, service/ingress listing, network scan with Wake-on-LAN support
+- **Devices** — Background LAN monitoring with device inventory, status tracking, and custom naming
+- **Alerts** — Configurable alerts for node issues, resource usage, pod crashes, and disk pressure
+- **Namespaces** — Create, view, and delete Kubernetes namespaces
+- **Deploy** — Apply raw YAML manifests or use app templates with configurable parameters
+- **Apps** — Manage template-deployed applications with restart, scale, reconfigure, and uninstall
+- **Updates** — Rolling OS updates (`apt upgrade`) and k3s version upgrades across all nodes from the UI with live progress tracking
+- **Logs** — Real-time pod log viewer with container and tail-line selection
+- **LLM Backroom** — AI model deployment templates for running LLMs on the cluster
+- **Command Palette** — `Cmd+K` search and `g+key` keyboard navigation shortcuts
+- **Dark/Light Theme** — Toggle with preference persistence
 
 ## Quick Start
 
@@ -56,11 +65,65 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now k3s-dashboard
 ```
 
+## Architecture
+
+```
+k3s-dashboard/
+├── server.js                  # Express app entry point
+├── config.js                  # Environment configuration
+├── services/
+│   ├── k8s-client.js          # Kubernetes API wrapper (nodes, pods, deployments, drain/cordon)
+│   ├── metrics-collector.js   # Background metrics collection and history
+│   ├── device-monitor.js      # Background LAN device scanning
+│   ├── app-manager.js         # Template-deployed app lifecycle management
+│   └── update-manager.js      # Rolling OS/k3s update orchestration via SSH
+├── routes/api/
+│   ├── index.js               # API router (auth gating)
+│   ├── cluster.js, nodes.js, pods.js, deployments.js, ...
+│   ├── apps.js                # App management endpoints
+│   └── updates.js             # Update check/start/status/reset endpoints
+├── public/
+│   ├── *.html                 # Page templates (13 pages)
+│   ├── js/api.js              # Shared client: API wrapper, toasts, command palette, sidebar
+│   ├── js/*.js                # Per-page logic
+│   └── css/style.css          # All styles (dark/light themes)
+├── templates/                 # App deployment templates (YAML with {{PLACEHOLDER}} syntax)
+└── data/                      # Persisted state (device-monitor.json, update-state.json, etc.)
+```
+
+### Updates System
+
+The updates feature performs rolling operations across the 4-node cluster:
+
+- **OS Updates**: Workers first, then server. Each node is cordoned, drained, upgraded via `apt upgrade` over SSH, then uncordoned.
+- **K3s Upgrades**: Server first (via install script), then agents (binary replacement to avoid spurious service files). Includes waiting for API server recovery.
+- **Progress Tracking**: Per-node step indicators with live log output, adaptive polling (2s active, 30s idle), state persisted to disk.
+
+SSH must be configured with key-based auth (`BatchMode=yes`) from the dashboard host to all nodes.
+
 ## Tech Stack
 
 - **Backend:** Node.js, Express 5
 - **Frontend:** Vanilla HTML/CSS/JS (no build step)
 - **Kubernetes:** @kubernetes/client-node
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd/Ctrl+K` | Command palette |
+| `g h` | Go to Overview |
+| `g n` | Go to Nodes |
+| `g w` | Go to Workloads |
+| `g s` | Go to Storage |
+| `g e` | Go to Network |
+| `g i` | Go to Devices |
+| `g a` | Go to Alerts |
+| `g d` | Go to Deploy |
+| `g p` | Go to Apps |
+| `g u` | Go to Updates |
+| `g l` | Go to Logs |
+| `?` | Show keyboard help |
 
 ## License
 

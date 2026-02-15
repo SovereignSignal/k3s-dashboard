@@ -397,3 +397,7 @@ async function wakeDevice(mac) {
 
 // Load network info on page load
 loadNetworkInfo();
+
+// Initialize scan button event listeners
+document.getElementById('scanBtn').addEventListener('click', () => scanNetwork(false));
+document.getElementById('deepScanBtn').addEventListener('click', () => scanNetwork(true));
