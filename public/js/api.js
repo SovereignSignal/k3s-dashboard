@@ -187,6 +187,7 @@ const commandPalette = {
       { id: 'namespaces', title: 'Go to Namespaces', desc: 'Manage namespaces', icon: 'folder', action: () => window.location.href = '/namespaces.html', group: 'Navigation' },
       { id: 'deploy', title: 'Deploy YAML', desc: 'Apply Kubernetes manifests', icon: 'upload', action: () => window.location.href = '/deploy.html', group: 'Actions' },
       { id: 'apps', title: 'Go to Apps', desc: 'Manage installed apps', icon: 'package', action: () => window.location.href = '/apps.html', group: 'Navigation' },
+      { id: 'updates', title: 'Go to Updates', desc: 'OS and K3s updates', icon: 'download', action: () => window.location.href = '/updates.html', group: 'Navigation' },
       { id: 'logs', title: 'View Logs', desc: 'Pod log viewer', icon: 'terminal', action: () => window.location.href = '/logs.html', group: 'Actions' },
       { id: 'theme', title: 'Toggle Theme', desc: 'Switch dark/light mode', icon: 'sun', action: () => { toggleTheme(); this.close(); }, group: 'Settings' },
       { id: 'logout', title: 'Logout', desc: 'Sign out of dashboard', icon: 'log-out', action: () => api.post('/api/auth/logout').then(() => window.location.href = '/login.html'), group: 'Settings' },
@@ -344,6 +345,7 @@ const commandPalette = {
       'log-out': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
       monitor: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
       package: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0022 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+      download: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
     };
     return icons[name] || '';
   },
@@ -472,6 +474,7 @@ function initKeyboardShortcuts() {
           'a': '/alerts.html',    // g+a = alerts
           'd': '/deploy.html',    // g+d = deploy
           'p': '/apps.html',      // g+p = apps (packages)
+          'u': '/updates.html',   // g+u = updates
           'l': '/logs.html',      // g+l = logs
         };
         if (routes[e2.key]) {
@@ -515,6 +518,7 @@ function showKeyboardHelp() {
           <div><kbd>g</kbd> <kbd>a</kbd></div><div>Go to Alerts</div>
           <div><kbd>g</kbd> <kbd>d</kbd></div><div>Go to Deploy</div>
           <div><kbd>g</kbd> <kbd>p</kbd></div><div>Go to Apps</div>
+          <div><kbd>g</kbd> <kbd>u</kbd></div><div>Go to Updates</div>
           <div><kbd>g</kbd> <kbd>l</kbd></div><div>Go to Logs</div>
           <div><kbd>?</kbd></div><div>Show this help</div>
         </div>
@@ -548,6 +552,7 @@ const sidebarIcons = {
   namespaces: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>',
   deploy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
   apps: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0022 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+  updates: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
   logs: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
   backroom: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="8" r="2"/><circle cx="19" cy="8" r="2"/><circle cx="5" cy="16" r="2"/><circle cx="19" cy="16" r="2"/><path d="M7 8h3M14 8h3M7 16h3M14 16h3"/></svg>',
 };

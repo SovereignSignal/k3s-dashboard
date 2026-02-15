@@ -244,6 +244,93 @@ async function getClusterOverview() {
   };
 }
 
+// ---- Node Cordon/Drain ----
+
+async function cordonNode(name) {
+  return coreApi.patchNode({
+    name,
+    body: [{ op: 'replace', path: '/spec/unschedulable', value: true }],
+  });
+}
+
+async function uncordonNode(name) {
+  return coreApi.patchNode({
+    name,
+    body: [{ op: 'replace', path: '/spec/unschedulable', value: false }],
+  });
+}
+
+async function drainNode(name) {
+  const pods = await coreApi.listPodForAllNamespaces({
+    fieldSelector: `spec.nodeName=${name}`,
+  });
+
+  const evictable = pods.items.filter((p) => {
+    // Skip DaemonSet-owned pods
+    const owners = p.metadata.ownerReferences || [];
+    if (owners.some((o) => o.kind === 'DaemonSet')) return false;
+    // Skip mirror pods (static pods)
+    if (p.metadata.annotations?.['kubernetes.io/config.mirror']) return false;
+    return true;
+  });
+
+  // Evict each pod
+  for (const pod of evictable) {
+    try {
+      await coreApi.createNamespacedPodEviction({
+        name: pod.metadata.name,
+        namespace: pod.metadata.namespace,
+        body: {
+          apiVersion: 'policy/v1',
+          kind: 'Eviction',
+          metadata: {
+            name: pod.metadata.name,
+            namespace: pod.metadata.namespace,
+          },
+        },
+      });
+    } catch (err) {
+      // 404 means pod already gone, 429 means too many requests — ignore both
+      if (err.code !== 404 && err.statusCode !== 404 && err.code !== 429 && err.statusCode !== 429) {
+        throw err;
+      }
+    }
+  }
+
+  // Wait for pods to terminate (60s timeout)
+  const deadline = Date.now() + 60_000;
+  while (Date.now() < deadline) {
+    const remaining = await coreApi.listPodForAllNamespaces({
+      fieldSelector: `spec.nodeName=${name}`,
+    });
+    const stillEvicting = remaining.items.filter((p) => {
+      const owners = p.metadata.ownerReferences || [];
+      if (owners.some((o) => o.kind === 'DaemonSet')) return false;
+      if (p.metadata.annotations?.['kubernetes.io/config.mirror']) return false;
+      return true;
+    });
+    if (stillEvicting.length === 0) return;
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  logger.warn(`Drain timeout for node ${name}, some pods may still be running`);
+}
+
+async function waitForNodeReady(name, timeoutSeconds = 120) {
+  const deadline = Date.now() + timeoutSeconds * 1000;
+  while (Date.now() < deadline) {
+    try {
+      const node = await coreApi.readNode({ name });
+      const ready = (node.status?.conditions || []).find((c) => c.type === 'Ready');
+      if (ready && ready.status === 'True') return true;
+    } catch (err) {
+      // API may be unreachable during k3s server restart — keep retrying
+      logger.debug(`waitForNodeReady(${name}): ${err.message}`);
+    }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+  throw new Error(`Node ${name} did not become Ready within ${timeoutSeconds}s`);
+}
+
 // ---- Helpers ----
 
 function parseCpu(cpuStr) {
@@ -289,6 +376,10 @@ module.exports = {
   listEvents,
   applyManifest,
   getClusterOverview,
+  cordonNode,
+  uncordonNode,
+  drainNode,
+  waitForNodeReady,
   parseCpu,
   parseMem,
 };

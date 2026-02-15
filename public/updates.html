@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>Updates - K3s Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="mobile-header">
+    <button class="menu-toggle" aria-label="Toggle navigation menu">&#9776;</button>
+    <span>K3s Dashboard</span>
+  </div>
+  <div class="sidebar-backdrop"></div>
+  <div class="app-layout">
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-name">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="12 6 12 12 16 14" fill="currentColor" stroke="none"/>
+          </svg>
+          K3s Dashboard
+        </div>
+        <small>Raspberry Pi Cluster</small>
+      </div>
+      <div class="sidebar-shortcut">
+        <span>Search</span>
+        <span><kbd>⌘</kbd> <kbd>K</kbd></span>
+      </div>
+      <div class="sidebar-nav">
+        <a href="/index.html" data-icon="overview">Overview</a>
+        <a href="/nodes.html" data-icon="nodes">Nodes</a>
+        <a href="/workloads.html" data-icon="workloads">Workloads</a>
+        <a href="/storage.html" data-icon="storage">Storage</a>
+        <a href="/network.html" data-icon="network">Network</a>
+        <a href="/devices.html" data-icon="devices">Devices</a>
+        <a href="/alerts.html" data-icon="alerts">Alerts</a>
+        <a href="/namespaces.html" data-icon="namespaces">Namespaces</a>
+        <a href="/deploy.html" data-icon="deploy">Deploy</a>
+        <a href="/apps.html" data-icon="apps">Apps</a>
+        <a href="/updates.html" data-icon="updates">Updates</a>
+        <a href="/logs.html" data-icon="logs">Logs</a>
+        <a href="/backroom.html" data-icon="backroom">LLM Backroom</a>
+      </div>
+      <div class="theme-toggle"><span>Theme</span><div class="theme-toggle-switch" role="switch" aria-checked="false"></div></div>
+      <div class="sidebar-footer">
+        <button class="btn btn-sm btn-block" id="logout-btn">Logout</button>
+      </div>
+    </nav>
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Updates</h1>
+          <p class="page-subtitle">Rolling OS and K3s updates across cluster nodes</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn" id="btn-check" onclick="checkForUpdates()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            Check for Updates
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-4" id="summary-cards">
+        <div class="card"><div class="card-title">Loading...</div></div>
+      </div>
+
+      <!-- Node Version Details -->
+      <div class="card mt-2" id="node-details-card">
+        <div class="card-title">Node Details</div>
+        <div id="node-details">
+          <div class="loading-state"><span class="spinner"></span><p>Loading...</p></div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="grid grid-2 mt-2" id="actions-section">
+        <div class="card">
+          <div class="card-title">OS Update</div>
+          <p class="text-sm text-muted mb-1">Run <code>apt upgrade</code> on each node in a rolling fashion. Nodes are cordoned and drained before update.</p>
+          <button class="btn btn-primary" id="btn-os-update" onclick="startOsUpdate()" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Start OS Update
+          </button>
+        </div>
+        <div class="card">
+          <div class="card-title">K3s Upgrade</div>
+          <p class="text-sm text-muted mb-1">Upgrade k3s on all nodes. Server is upgraded first, then agents.</p>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="btn btn-primary" id="btn-k3s-upgrade" onclick="startK3sUpgrade()" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Upgrade K3s
+            </button>
+            <span class="text-sm text-muted" id="k3s-target-label"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Section -->
+      <div class="card mt-2" id="progress-section" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div class="card-title" id="progress-title">Progress</div>
+          <button class="btn btn-sm" id="btn-reset" onclick="resetState()" style="display: none;">Reset</button>
+        </div>
+        <div id="progress-content"></div>
+      </div>
+
+      <!-- Log Section -->
+      <div class="card mt-2" id="log-section" style="display: none;">
+        <div class="card-title">Log Output</div>
+        <div id="log-output" style="max-height: 400px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.8rem; background: var(--bg-tertiary); border-radius: var(--radius); padding: 0.75rem; line-height: 1.5;"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/updates.js"></script>
+</body>
+</html>

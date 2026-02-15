@@ -9,6 +9,7 @@ const apiRouter = require('./routes/api');
 const metricsCollector = require('./services/metrics-collector');
 const deviceMonitor = require('./services/device-monitor');
 const appManager = require('./services/app-manager');
+const updateManager = require('./services/update-manager');
 const k8s = require('./services/k8s-client');
 const { templates } = require('./routes/api/templates');
 
@@ -95,4 +96,7 @@ app.listen(config.port, config.bindAddress, () => {
 
   // Start app manager
   appManager.start(templates, k8s);
+
+  // Start update manager
+  updateManager.start();
 });
