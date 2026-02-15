@@ -274,7 +274,7 @@ async function startOsUpdate() {
       steps: [
         { name: 'Cordon', status: 'pending', output: '' },
         { name: 'Drain', status: 'pending', output: '' },
-        { name: 'Apt Upgrade', status: 'pending', output: '' },
+        { name: 'Apt Full-Upgrade', status: 'pending', output: '' },
         { name: 'Uncordon', status: 'pending', output: '' },
         { name: 'Wait Ready', status: 'pending', output: '' },
       ],
@@ -316,13 +316,13 @@ async function runOsUpdate(nodes) {
 
       // Step 3: Apt upgrade
       await runStep(node.name, 2, async () => {
-        addLog(node.name, 'Running apt upgrade...');
+        addLog(node.name, 'Running apt full-upgrade...');
         const output = await remoteExec(
           node.name, node.ip,
-          'sudo apt update -qq 2>/dev/null && sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y 2>&1',
+          'sudo apt update -qq 2>/dev/null && sudo DEBIAN_FRONTEND=noninteractive apt full-upgrade -y 2>&1',
           300_000
         );
-        addLog(node.name, 'Apt upgrade completed');
+        addLog(node.name, 'Apt full-upgrade completed');
         return output.slice(-500); // Keep last 500 chars
       });
 
