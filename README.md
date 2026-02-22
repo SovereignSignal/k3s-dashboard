@@ -16,6 +16,7 @@ A lightweight web dashboard for managing a Raspberry Pi k3s cluster. Built with 
 - **Apps** — Manage template-deployed applications with restart, scale, reconfigure, and uninstall
 - **Updates** — Rolling OS updates (`apt upgrade`) and k3s version upgrades across all nodes from the UI with live progress tracking
 - **Logs** — Real-time pod log viewer with container and tail-line selection
+- **AI Arena** — Pit AI models head-to-head with custom prompts or pre-built challenge templates (trivia, code, creative, reasoning, speed); includes model quick-deploy/teardown and cluster resource monitoring
 - **LLM Backroom** — AI model deployment templates for running LLMs on the cluster
 - **Command Palette** — `Cmd+K` search and `g+key` keyboard navigation shortcuts
 - **Dark/Light Theme** — Toggle with preference persistence
@@ -81,6 +82,7 @@ k3s-dashboard/
 │   ├── index.js               # API router (auth gating)
 │   ├── cluster.js, nodes.js, pods.js, deployments.js, ...
 │   ├── apps.js                # App management endpoints
+│   ├── arena.js               # AI Arena: matches, challenges, model deploy/teardown
 │   └── updates.js             # Update check/start/status/reset endpoints
 ├── public/
 │   ├── *.html                 # Page templates (13 pages)
@@ -100,6 +102,28 @@ The updates feature performs rolling operations across the 4-node cluster:
 - **Progress Tracking**: Per-node step indicators with live log output, adaptive polling (2s active, 30s idle), state persisted to disk.
 
 SSH must be configured with key-based auth (`BatchMode=yes`) from the dashboard host to all nodes.
+
+### AI Arena
+
+The arena lets you compare AI models running on the cluster:
+
+- **Custom Battles**: Free-form prompts sent to 2+ models in parallel, with response timing, token/s metrics, and manual voting.
+- **Challenge Templates**: 6 pre-built challenge sets across categories (trivia, science, code, creative, reasoning, speed). Trivia/logic/speed challenges use auto-scoring via word-boundary matching; code/creative use manual voting.
+- **Model Management**: Deploy and tear down Ollama AI models directly from the arena page. Reuses the template system and app manager. PVCs are preserved on teardown for fast re-deploy.
+- **Cluster Resources**: Collapsible per-node RAM usage bar to help decide which models fit on the cluster.
+
+**API Endpoints:**
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/arena/participants` | Discover online Ollama endpoints |
+| `POST` | `/api/arena/match` | Run a custom battle |
+| `GET` | `/api/arena/challenges` | List challenge templates |
+| `POST` | `/api/arena/challenge` | Run a challenge (sequential rounds, parallel participants) |
+| `GET` | `/api/arena/models` | AI templates with deploy status and RAM estimates |
+| `POST` | `/api/arena/models/:id/deploy` | Deploy an AI model |
+| `DELETE` | `/api/arena/models/:id` | Tear down a model (preserves PVCs) |
+| `GET` | `/api/arena/resources` | Cluster node memory/CPU |
 
 ## Tech Stack
 

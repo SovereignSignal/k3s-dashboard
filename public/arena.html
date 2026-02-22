@@ -336,12 +336,381 @@
       to { transform: rotate(360deg); }
     }
 
+    /* Model manager */
+    .arena-models {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .arena-models h3 {
+      margin: 0 0 0.75rem 0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .arena-models h3 .arena-models-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .arena-model-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .arena-model-card {
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      transition: var(--transition);
+    }
+
+    .arena-model-card.deployed {
+      border-color: var(--success-color);
+    }
+
+    .arena-model-card.starting {
+      border-color: #f0ad4e;
+    }
+
+    .arena-model-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .arena-model-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .arena-model-status.running { background: var(--success-color); }
+    .arena-model-status.starting { background: #f0ad4e; animation: pulse 1.5s infinite; }
+    .arena-model-status.not_deployed { background: var(--text-muted); opacity: 0.4; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .arena-model-card-name {
+      font-weight: 600;
+      font-size: 0.8rem;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .arena-model-card-info {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .arena-model-action {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.7rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background: var(--hover-bg);
+      color: var(--text-color);
+      cursor: pointer;
+      transition: var(--transition);
+      align-self: flex-start;
+    }
+
+    .arena-model-action:hover {
+      border-color: var(--primary-color);
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .arena-model-action.teardown:hover {
+      border-color: var(--danger-color);
+      background: var(--danger-color);
+    }
+
+    /* Resources bar */
+    .arena-resources {
+      margin-bottom: 0.75rem;
+      display: none;
+    }
+
+    .arena-resources.visible {
+      display: block;
+    }
+
+    .arena-resource-node {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+      font-size: 0.75rem;
+    }
+
+    .arena-resource-node-name {
+      min-width: 50px;
+      color: var(--text-muted);
+    }
+
+    .arena-resource-bar {
+      flex: 1;
+      height: 12px;
+      background: var(--hover-bg);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .arena-resource-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.3s;
+    }
+
+    .arena-resource-bar-fill.green { background: var(--success-color); }
+    .arena-resource-bar-fill.yellow { background: #f0ad4e; }
+    .arena-resource-bar-fill.red { background: var(--danger-color); }
+
+    .arena-resource-free {
+      min-width: 55px;
+      text-align: right;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* Challenge templates */
+    .arena-challenges {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .arena-challenges h3 {
+      margin: 0 0 0.75rem 0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .arena-challenge-tabs {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .arena-tab {
+      padding: 0.3rem 0.65rem;
+      font-size: 0.7rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background: var(--hover-bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .arena-tab:hover {
+      border-color: var(--primary-color);
+      color: var(--text-color);
+    }
+
+    .arena-tab.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+    }
+
+    .arena-challenge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .arena-challenge-card {
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      transition: var(--transition);
+    }
+
+    .arena-challenge-card:hover {
+      border-color: var(--primary-color);
+    }
+
+    .arena-challenge-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .arena-challenge-card-icon {
+      font-size: 1.2rem;
+    }
+
+    .arena-challenge-card-name {
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .arena-challenge-card-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .arena-challenge-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.25rem;
+    }
+
+    .arena-challenge-card-meta {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .arena-challenge-run-btn {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.7rem;
+      border: 1px solid var(--primary-color);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--primary-color);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .arena-challenge-run-btn:hover {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    /* Challenge results */
+    .arena-scores-banner {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .arena-score-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      flex: 1;
+      min-width: 150px;
+      text-align: center;
+    }
+
+    .arena-score-card.top-scorer {
+      border-color: var(--success-color);
+      background: rgba(0, 168, 84, 0.05);
+    }
+
+    .arena-score-card-name {
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .arena-score-card-score {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+
+    .arena-score-card-meta {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .arena-round {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .arena-round-header {
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .arena-round-answer {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .arena-round-correct {
+      color: var(--success-color);
+      font-weight: 600;
+      font-size: 0.7rem;
+    }
+
+    .arena-round-wrong {
+      color: var(--danger-color);
+      font-weight: 600;
+      font-size: 0.7rem;
+    }
+
+    .arena-history-type {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+      background: var(--hover-bg);
+      color: var(--text-muted);
+    }
+
+    .arena-history-type.challenge {
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--primary-color);
+    }
+
     @media (max-width: 768px) {
       .arena-config {
         margin-left: 0;
         width: 100%;
       }
       .arena-results {
+        grid-template-columns: 1fr;
+      }
+      .arena-model-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .arena-challenge-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -407,8 +776,37 @@
         </div>
       </div>
 
+      <div class="arena-models" id="modelsPanel">
+        <h3>
+          <span>Models</span>
+          <span class="arena-models-actions">
+            <button class="btn btn-sm" onclick="toggleResources()" style="font-size: 0.7rem;">Resources</button>
+            <button class="btn btn-sm" onclick="loadModels()" style="font-size: 0.7rem;">Refresh</button>
+          </span>
+        </h3>
+        <div class="arena-resources" id="resourcesBar"></div>
+        <div class="arena-model-grid" id="modelGrid">
+          <p style="color: var(--text-muted); font-size: 0.8rem;">Loading models...</p>
+        </div>
+      </div>
+
+      <div class="arena-challenges" id="challengesPanel">
+        <h3>Challenge Templates</h3>
+        <div class="arena-challenge-tabs" id="challengeTabs">
+          <button class="arena-tab active" onclick="filterChallenges('all')">All</button>
+          <button class="arena-tab" onclick="filterChallenges('trivia')">Trivia</button>
+          <button class="arena-tab" onclick="filterChallenges('code')">Code</button>
+          <button class="arena-tab" onclick="filterChallenges('creative')">Creative</button>
+          <button class="arena-tab" onclick="filterChallenges('reasoning')">Reasoning</button>
+          <button class="arena-tab" onclick="filterChallenges('speed')">Speed</button>
+        </div>
+        <div class="arena-challenge-grid" id="challengeGrid">
+          <p style="color: var(--text-muted); font-size: 0.8rem;">Loading challenges...</p>
+        </div>
+      </div>
+
       <div class="arena-prompt">
-        <h3>Battle Setup</h3>
+        <h3>Custom Battle</h3>
         <textarea id="promptInput" placeholder="Enter a prompt to test all models with..."></textarea>
         <div class="arena-participants-select" id="participantsSelect">
           <p style="color: var(--text-muted); font-size: 0.8rem;">Loading participants...</p>
