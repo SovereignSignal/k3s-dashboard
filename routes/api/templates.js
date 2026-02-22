@@ -572,9 +572,9 @@ scrape_configs:
   },
   {
     id: 'ollama-qwen',
-    name: 'Ollama + Qwen2.5 1.5B',
+    name: 'Ollama + Qwen3 1.7B',
     category: 'AI',
-    description: 'Qwen2.5 1.5B - Best quality for size (~2GB RAM)',
+    description: 'Qwen3 1.7B - Best quality for size (~1.4GB RAM)',
     icon: '🦙',
     manifests: [
       {
@@ -608,12 +608,12 @@ scrape_configs:
                 },
                 env: [
                   { name: 'OLLAMA_HOST', value: '0.0.0.0' },
-                  { name: 'OLLAMA_MODEL', value: 'qwen2.5:1.5b' },
+                  { name: 'OLLAMA_MODEL', value: 'qwen3:1.7b' },
                 ],
                 lifecycle: {
                   postStart: {
                     exec: {
-                      command: ['/bin/sh', '-c', 'sleep 5 && ollama pull qwen2.5:1.5b &'],
+                      command: ['/bin/sh', '-c', 'sleep 5 && ollama pull qwen3:1.7b &'],
                     },
                   },
                 },
@@ -637,9 +637,9 @@ scrape_configs:
   },
   {
     id: 'ollama-phi',
-    name: 'Ollama + Phi-3 Mini',
+    name: 'Ollama + Phi-4 Mini',
     category: 'AI',
-    description: 'Phi-3 Mini 3.8B - Strong reasoning (~2.5GB RAM)',
+    description: 'Phi-4 Mini 3.8B - Strong math/coding, best on idle nodes (~2.5GB RAM)',
     icon: '🦙',
     manifests: [
       {
@@ -673,12 +673,12 @@ scrape_configs:
                 },
                 env: [
                   { name: 'OLLAMA_HOST', value: '0.0.0.0' },
-                  { name: 'OLLAMA_MODEL', value: 'phi3:mini' },
+                  { name: 'OLLAMA_MODEL', value: 'phi4-mini' },
                 ],
                 lifecycle: {
                   postStart: {
                     exec: {
-                      command: ['/bin/sh', '-c', 'sleep 5 && ollama pull phi3:mini &'],
+                      command: ['/bin/sh', '-c', 'sleep 5 && ollama pull phi4-mini &'],
                     },
                   },
                 },
@@ -702,9 +702,9 @@ scrape_configs:
   },
   {
     id: 'ollama-gemma',
-    name: 'Ollama + Gemma 2B',
+    name: 'Ollama + Gemma 3 1B',
     category: 'AI',
-    description: 'Google Gemma 2B - Great for conversation (~1.5GB RAM)',
+    description: 'Google Gemma 3 1B - Beats Gemma 2 at half the size (~0.8GB RAM)',
     icon: '🦙',
     manifests: [
       {
@@ -733,17 +733,17 @@ scrape_configs:
                 ports: [{ containerPort: 11434 }],
                 volumeMounts: [{ name: 'models', mountPath: '/root/.ollama' }],
                 resources: {
-                  requests: { cpu: '500m', memory: '1536Mi' },
-                  limits: { cpu: '4', memory: '2560Mi' },
+                  requests: { cpu: '500m', memory: '768Mi' },
+                  limits: { cpu: '4', memory: '1536Mi' },
                 },
                 env: [
                   { name: 'OLLAMA_HOST', value: '0.0.0.0' },
-                  { name: 'OLLAMA_MODEL', value: 'gemma:2b' },
+                  { name: 'OLLAMA_MODEL', value: 'gemma3:1b' },
                 ],
                 lifecycle: {
                   postStart: {
                     exec: {
-                      command: ['/bin/sh', '-c', 'sleep 5 && ollama pull gemma:2b &'],
+                      command: ['/bin/sh', '-c', 'sleep 5 && ollama pull gemma3:1b &'],
                     },
                   },
                 },
@@ -824,6 +824,331 @@ scrape_configs:
         metadata: { name: 'ollama-deepseek', namespace: 'default' },
         spec: {
           selector: { app: 'ollama-deepseek' },
+          ports: [{ port: 11434, targetPort: 11434 }],
+          type: 'ClusterIP',
+        },
+      },
+    ],
+  },
+  {
+    id: 'ollama-qwen3-06b',
+    name: 'Ollama + Qwen3 0.6B',
+    category: 'AI',
+    description: 'Qwen3 0.6B - Ultra-fast responses (~0.5GB RAM)',
+    icon: '🦙',
+    manifests: [
+      {
+        apiVersion: 'v1',
+        kind: 'PersistentVolumeClaim',
+        metadata: { name: 'ollama-qwen3-06b-models', namespace: 'default' },
+        spec: {
+          storageClassName: 'local-path',
+          accessModes: ['ReadWriteOnce'],
+          resources: { requests: { storage: '10Gi' } },
+        },
+      },
+      {
+        apiVersion: 'apps/v1',
+        kind: 'Deployment',
+        metadata: { name: 'ollama-qwen3-06b', namespace: 'default' },
+        spec: {
+          replicas: 1,
+          selector: { matchLabels: { app: 'ollama-qwen3-06b', 'llm-backroom': 'participant' } },
+          template: {
+            metadata: { labels: { app: 'ollama-qwen3-06b', 'llm-backroom': 'participant' } },
+            spec: {
+              containers: [{
+                name: 'ollama',
+                image: 'ollama/ollama:latest',
+                ports: [{ containerPort: 11434 }],
+                volumeMounts: [{ name: 'models', mountPath: '/root/.ollama' }],
+                resources: {
+                  requests: { cpu: '500m', memory: '512Mi' },
+                  limits: { cpu: '4', memory: '1Gi' },
+                },
+                env: [
+                  { name: 'OLLAMA_HOST', value: '0.0.0.0' },
+                  { name: 'OLLAMA_MODEL', value: 'qwen3:0.6b' },
+                ],
+                lifecycle: {
+                  postStart: {
+                    exec: {
+                      command: ['/bin/sh', '-c', 'sleep 5 && ollama pull qwen3:0.6b &'],
+                    },
+                  },
+                },
+              }],
+              volumes: [{ name: 'models', persistentVolumeClaim: { claimName: 'ollama-qwen3-06b-models' } }],
+            },
+          },
+        },
+      },
+      {
+        apiVersion: 'v1',
+        kind: 'Service',
+        metadata: { name: 'ollama-qwen3-06b', namespace: 'default' },
+        spec: {
+          selector: { app: 'ollama-qwen3-06b' },
+          ports: [{ port: 11434, targetPort: 11434 }],
+          type: 'ClusterIP',
+        },
+      },
+    ],
+  },
+  {
+    id: 'ollama-smollm2',
+    name: 'Ollama + SmolLM2 1.7B',
+    category: 'AI',
+    description: 'SmolLM2 1.7B - HuggingFace edge champion (~1.2GB RAM)',
+    icon: '🦙',
+    manifests: [
+      {
+        apiVersion: 'v1',
+        kind: 'PersistentVolumeClaim',
+        metadata: { name: 'ollama-smollm2-models', namespace: 'default' },
+        spec: {
+          storageClassName: 'local-path',
+          accessModes: ['ReadWriteOnce'],
+          resources: { requests: { storage: '10Gi' } },
+        },
+      },
+      {
+        apiVersion: 'apps/v1',
+        kind: 'Deployment',
+        metadata: { name: 'ollama-smollm2', namespace: 'default' },
+        spec: {
+          replicas: 1,
+          selector: { matchLabels: { app: 'ollama-smollm2', 'llm-backroom': 'participant' } },
+          template: {
+            metadata: { labels: { app: 'ollama-smollm2', 'llm-backroom': 'participant' } },
+            spec: {
+              containers: [{
+                name: 'ollama',
+                image: 'ollama/ollama:latest',
+                ports: [{ containerPort: 11434 }],
+                volumeMounts: [{ name: 'models', mountPath: '/root/.ollama' }],
+                resources: {
+                  requests: { cpu: '500m', memory: '1Gi' },
+                  limits: { cpu: '4', memory: '2Gi' },
+                },
+                env: [
+                  { name: 'OLLAMA_HOST', value: '0.0.0.0' },
+                  { name: 'OLLAMA_MODEL', value: 'smollm2:1.7b' },
+                ],
+                lifecycle: {
+                  postStart: {
+                    exec: {
+                      command: ['/bin/sh', '-c', 'sleep 5 && ollama pull smollm2:1.7b &'],
+                    },
+                  },
+                },
+              }],
+              volumes: [{ name: 'models', persistentVolumeClaim: { claimName: 'ollama-smollm2-models' } }],
+            },
+          },
+        },
+      },
+      {
+        apiVersion: 'v1',
+        kind: 'Service',
+        metadata: { name: 'ollama-smollm2', namespace: 'default' },
+        spec: {
+          selector: { app: 'ollama-smollm2' },
+          ports: [{ port: 11434, targetPort: 11434 }],
+          type: 'ClusterIP',
+        },
+      },
+    ],
+  },
+  {
+    id: 'ollama-llama32',
+    name: 'Ollama + Llama 3.2 1B',
+    category: 'AI',
+    description: 'Llama 3.2 1B - Meta\'s compact all-rounder (~1.3GB RAM)',
+    icon: '🦙',
+    manifests: [
+      {
+        apiVersion: 'v1',
+        kind: 'PersistentVolumeClaim',
+        metadata: { name: 'ollama-llama32-models', namespace: 'default' },
+        spec: {
+          storageClassName: 'local-path',
+          accessModes: ['ReadWriteOnce'],
+          resources: { requests: { storage: '10Gi' } },
+        },
+      },
+      {
+        apiVersion: 'apps/v1',
+        kind: 'Deployment',
+        metadata: { name: 'ollama-llama32', namespace: 'default' },
+        spec: {
+          replicas: 1,
+          selector: { matchLabels: { app: 'ollama-llama32', 'llm-backroom': 'participant' } },
+          template: {
+            metadata: { labels: { app: 'ollama-llama32', 'llm-backroom': 'participant' } },
+            spec: {
+              containers: [{
+                name: 'ollama',
+                image: 'ollama/ollama:latest',
+                ports: [{ containerPort: 11434 }],
+                volumeMounts: [{ name: 'models', mountPath: '/root/.ollama' }],
+                resources: {
+                  requests: { cpu: '500m', memory: '1Gi' },
+                  limits: { cpu: '4', memory: '2Gi' },
+                },
+                env: [
+                  { name: 'OLLAMA_HOST', value: '0.0.0.0' },
+                  { name: 'OLLAMA_MODEL', value: 'llama3.2:1b' },
+                ],
+                lifecycle: {
+                  postStart: {
+                    exec: {
+                      command: ['/bin/sh', '-c', 'sleep 5 && ollama pull llama3.2:1b &'],
+                    },
+                  },
+                },
+              }],
+              volumes: [{ name: 'models', persistentVolumeClaim: { claimName: 'ollama-llama32-models' } }],
+            },
+          },
+        },
+      },
+      {
+        apiVersion: 'v1',
+        kind: 'Service',
+        metadata: { name: 'ollama-llama32', namespace: 'default' },
+        spec: {
+          selector: { app: 'ollama-llama32' },
+          ports: [{ port: 11434, targetPort: 11434 }],
+          type: 'ClusterIP',
+        },
+      },
+    ],
+  },
+  {
+    id: 'ollama-moondream',
+    name: 'Ollama + Moondream 1.8B',
+    category: 'AI',
+    description: 'Moondream 1.8B - Vision model, understands images (~1.5GB RAM)',
+    icon: '🦙',
+    manifests: [
+      {
+        apiVersion: 'v1',
+        kind: 'PersistentVolumeClaim',
+        metadata: { name: 'ollama-moondream-models', namespace: 'default' },
+        spec: {
+          storageClassName: 'local-path',
+          accessModes: ['ReadWriteOnce'],
+          resources: { requests: { storage: '10Gi' } },
+        },
+      },
+      {
+        apiVersion: 'apps/v1',
+        kind: 'Deployment',
+        metadata: { name: 'ollama-moondream', namespace: 'default' },
+        spec: {
+          replicas: 1,
+          selector: { matchLabels: { app: 'ollama-moondream', 'llm-backroom': 'participant' } },
+          template: {
+            metadata: { labels: { app: 'ollama-moondream', 'llm-backroom': 'participant' } },
+            spec: {
+              containers: [{
+                name: 'ollama',
+                image: 'ollama/ollama:latest',
+                ports: [{ containerPort: 11434 }],
+                volumeMounts: [{ name: 'models', mountPath: '/root/.ollama' }],
+                resources: {
+                  requests: { cpu: '500m', memory: '1Gi' },
+                  limits: { cpu: '4', memory: '2Gi' },
+                },
+                env: [
+                  { name: 'OLLAMA_HOST', value: '0.0.0.0' },
+                  { name: 'OLLAMA_MODEL', value: 'moondream:1.8b' },
+                ],
+                lifecycle: {
+                  postStart: {
+                    exec: {
+                      command: ['/bin/sh', '-c', 'sleep 5 && ollama pull moondream:1.8b &'],
+                    },
+                  },
+                },
+              }],
+              volumes: [{ name: 'models', persistentVolumeClaim: { claimName: 'ollama-moondream-models' } }],
+            },
+          },
+        },
+      },
+      {
+        apiVersion: 'v1',
+        kind: 'Service',
+        metadata: { name: 'ollama-moondream', namespace: 'default' },
+        spec: {
+          selector: { app: 'ollama-moondream' },
+          ports: [{ port: 11434, targetPort: 11434 }],
+          type: 'ClusterIP',
+        },
+      },
+    ],
+  },
+  {
+    id: 'ollama-gemma3-270m',
+    name: 'Ollama + Gemma 3 270M',
+    category: 'AI',
+    description: 'Gemma 3 270M - Instant responses, minimal resources (~0.3GB RAM)',
+    icon: '🦙',
+    manifests: [
+      {
+        apiVersion: 'v1',
+        kind: 'PersistentVolumeClaim',
+        metadata: { name: 'ollama-gemma3-270m-models', namespace: 'default' },
+        spec: {
+          storageClassName: 'local-path',
+          accessModes: ['ReadWriteOnce'],
+          resources: { requests: { storage: '5Gi' } },
+        },
+      },
+      {
+        apiVersion: 'apps/v1',
+        kind: 'Deployment',
+        metadata: { name: 'ollama-gemma3-270m', namespace: 'default' },
+        spec: {
+          replicas: 1,
+          selector: { matchLabels: { app: 'ollama-gemma3-270m', 'llm-backroom': 'participant' } },
+          template: {
+            metadata: { labels: { app: 'ollama-gemma3-270m', 'llm-backroom': 'participant' } },
+            spec: {
+              containers: [{
+                name: 'ollama',
+                image: 'ollama/ollama:latest',
+                ports: [{ containerPort: 11434 }],
+                volumeMounts: [{ name: 'models', mountPath: '/root/.ollama' }],
+                resources: {
+                  requests: { cpu: '500m', memory: '256Mi' },
+                  limits: { cpu: '4', memory: '768Mi' },
+                },
+                env: [
+                  { name: 'OLLAMA_HOST', value: '0.0.0.0' },
+                  { name: 'OLLAMA_MODEL', value: 'gemma3:270m' },
+                ],
+                lifecycle: {
+                  postStart: {
+                    exec: {
+                      command: ['/bin/sh', '-c', 'sleep 5 && ollama pull gemma3:270m &'],
+                    },
+                  },
+                },
+              }],
+              volumes: [{ name: 'models', persistentVolumeClaim: { claimName: 'ollama-gemma3-270m-models' } }],
+            },
+          },
+        },
+      },
+      {
+        apiVersion: 'v1',
+        kind: 'Service',
+        metadata: { name: 'ollama-gemma3-270m', namespace: 'default' },
+        spec: {
+          selector: { app: 'ollama-gemma3-270m' },
           ports: [{ port: 11434, targetPort: 11434 }],
           type: 'ClusterIP',
         },
@@ -1021,6 +1346,94 @@ scrape_configs:
         spec: {
           selector: { app: 'minecraft' },
           ports: [{ port: 25565, targetPort: 25565, nodePort: '{{NODE_PORT}}' }],
+          type: 'NodePort',
+        },
+      },
+    ],
+  },
+  {
+    id: 'openclaw',
+    name: 'OpenClaw',
+    category: 'Agent',
+    description: 'Autonomous AI agent - connects to messaging platforms',
+    icon: '🦞',
+    config: [
+      {
+        id: 'LLM_PROVIDER',
+        label: 'LLM Provider',
+        type: 'select',
+        default: 'ollama',
+        options: ['ollama', 'anthropic', 'openai'],
+      },
+      {
+        id: 'LLM_API_KEY',
+        label: 'API Key (cloud providers only)',
+        type: 'text',
+        default: '',
+      },
+      {
+        id: 'OLLAMA_URL',
+        label: 'Ollama URL',
+        type: 'text',
+        default: 'http://ollama.default.svc.cluster.local:11434',
+      },
+      {
+        id: 'NODE_PORT',
+        label: 'Port',
+        type: 'select',
+        default: '30580',
+        options: ['30580', '30581', '30582'],
+        hint: 'Access via any-node-ip:port',
+      },
+    ],
+    manifests: [
+      {
+        apiVersion: 'v1',
+        kind: 'PersistentVolumeClaim',
+        metadata: { name: 'openclaw-data', namespace: 'default' },
+        spec: {
+          storageClassName: 'local-path-ssd',
+          accessModes: ['ReadWriteOnce'],
+          resources: { requests: { storage: '5Gi' } },
+        },
+      },
+      {
+        apiVersion: 'apps/v1',
+        kind: 'Deployment',
+        metadata: { name: 'openclaw', namespace: 'default' },
+        spec: {
+          replicas: 1,
+          selector: { matchLabels: { app: 'openclaw' } },
+          template: {
+            metadata: { labels: { app: 'openclaw' } },
+            spec: {
+              containers: [{
+                name: 'openclaw',
+                image: 'ghcr.io/openclaw/openclaw:latest',
+                ports: [{ containerPort: 18789 }],
+                env: [
+                  { name: 'LLM_PROVIDER', value: '{{LLM_PROVIDER}}' },
+                  { name: 'LLM_API_KEY', value: '{{LLM_API_KEY}}' },
+                  { name: 'OLLAMA_URL', value: '{{OLLAMA_URL}}' },
+                ],
+                volumeMounts: [{ name: 'data', mountPath: '/home/node/.openclaw' }],
+                resources: {
+                  requests: { cpu: '200m', memory: '256Mi' },
+                  limits: { cpu: '1000m', memory: '1Gi' },
+                },
+              }],
+              volumes: [{ name: 'data', persistentVolumeClaim: { claimName: 'openclaw-data' } }],
+            },
+          },
+        },
+      },
+      {
+        apiVersion: 'v1',
+        kind: 'Service',
+        metadata: { name: 'openclaw', namespace: 'default' },
+        spec: {
+          selector: { app: 'openclaw' },
+          ports: [{ port: 18789, targetPort: 18789, nodePort: '{{NODE_PORT}}' }],
           type: 'NodePort',
         },
       },

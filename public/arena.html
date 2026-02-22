@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>AI Arena - K3s Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    .arena-prompt {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .arena-prompt h3 {
+      margin: 0 0 0.75rem 0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .arena-prompt textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-size: 0.875rem;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 0.75rem;
+    }
+
+    .arena-prompt textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    .arena-participants-select {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .arena-participant-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.65rem;
+      background: var(--hover-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .arena-participant-checkbox:hover {
+      border-color: var(--primary-color);
+    }
+
+    .arena-participant-checkbox.selected {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+    }
+
+    .arena-participant-checkbox input {
+      display: none;
+    }
+
+    .arena-controls {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .arena-config {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-left: auto;
+    }
+
+    .arena-config label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .arena-config input[type="range"] {
+      width: 80px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border-color);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .arena-config input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      cursor: pointer;
+    }
+
+    .arena-config .config-value {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      min-width: 28px;
+    }
+
+    .arena-results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .arena-response-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition);
+    }
+
+    .arena-response-card.winner {
+      border-color: var(--success-color);
+      box-shadow: 0 0 0 1px var(--success-color);
+    }
+
+    .arena-response-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .arena-model-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .arena-timing {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .arena-timing-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: var(--hover-bg);
+      color: var(--text-muted);
+    }
+
+    .arena-timing-badge.fast {
+      background: rgba(0, 168, 84, 0.15);
+      color: var(--success-color);
+    }
+
+    .arena-response-text {
+      font-size: 0.85rem;
+      line-height: 1.6;
+      flex: 1;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 0.75rem;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .arena-response-error {
+      color: var(--danger-color);
+      font-style: italic;
+    }
+
+    .arena-response-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .arena-token-info {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .arena-vote-btn {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--hover-bg);
+      color: var(--text-color);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .arena-vote-btn:hover {
+      border-color: var(--primary-color);
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .arena-vote-btn.voted {
+      background: var(--success-color);
+      border-color: var(--success-color);
+      color: white;
+    }
+
+    .arena-winner-banner {
+      text-align: center;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border-radius: 6px;
+      background: rgba(0, 168, 84, 0.1);
+      color: var(--success-color);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .arena-history {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+
+    .arena-history h3 {
+      margin: 0 0 0.75rem 0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .arena-history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    .arena-history-table th {
+      text-align: left;
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .arena-history-table td {
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .arena-history-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .arena-history-table .prompt-snippet {
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .arena-empty {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+    }
+
+    .arena-empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .arena-empty h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1rem;
+      color: var(--text-color);
+    }
+
+    .arena-empty p {
+      margin: 0;
+      font-size: 0.85rem;
+    }
+
+    .arena-loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+    }
+
+    .arena-spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--border-color);
+      border-top: 3px solid var(--primary-color);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 0.5rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .arena-config {
+        margin-left: 0;
+        width: 100%;
+      }
+      .arena-results {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-header">
+    <button class="menu-toggle" aria-label="Toggle navigation menu">&#9776;</button>
+    <span>K3s Dashboard</span>
+  </div>
+  <div class="sidebar-backdrop"></div>
+  <div class="app-layout">
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-name">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="12 6 12 12 16 14" fill="currentColor" stroke="none"/>
+          </svg>
+          K3s Dashboard
+        </div>
+        <small>Raspberry Pi Cluster</small>
+      </div>
+      <div class="sidebar-shortcut">
+        <span>Search</span>
+        <span><kbd>Ctrl</kbd> <kbd>K</kbd></span>
+      </div>
+      <div class="sidebar-nav">
+        <a href="/index.html" data-icon="overview">Overview</a>
+        <a href="/nodes.html" data-icon="nodes">Nodes</a>
+        <a href="/workloads.html" data-icon="workloads">Workloads</a>
+        <a href="/storage.html" data-icon="storage">Storage</a>
+        <a href="/network.html" data-icon="network">Network</a>
+        <a href="/devices.html" data-icon="devices">Devices</a>
+        <a href="/alerts.html" data-icon="alerts">Alerts</a>
+        <a href="/namespaces.html" data-icon="namespaces">Namespaces</a>
+        <a href="/deploy.html" data-icon="deploy">Deploy</a>
+        <a href="/apps.html" data-icon="apps">Apps</a>
+        <a href="/updates.html" data-icon="updates">Updates</a>
+        <a href="/logs.html" data-icon="logs">Logs</a>
+        <a href="/backroom.html" data-icon="backroom">LLM Backroom</a>
+        <a href="/arena.html" data-icon="arena" class="active">AI Arena</a>
+      </div>
+      <div class="theme-toggle"><span>Theme</span><div class="theme-toggle-switch" role="switch" aria-checked="false"></div></div>
+      <div class="sidebar-footer">
+        <button class="btn btn-sm btn-block" id="logout-btn">Logout</button>
+      </div>
+    </nav>
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>AI Arena</h1>
+          <p class="page-subtitle">Pit AI models against each other</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn" onclick="loadParticipants()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="arena-prompt">
+        <h3>Battle Setup</h3>
+        <textarea id="promptInput" placeholder="Enter a prompt to test all models with..."></textarea>
+        <div class="arena-participants-select" id="participantsSelect">
+          <p style="color: var(--text-muted); font-size: 0.8rem;">Loading participants...</p>
+        </div>
+        <div class="arena-controls">
+          <button class="btn btn-primary" id="battleBtn" disabled>Battle!</button>
+          <div class="arena-config">
+            <label>
+              Temp
+              <input type="range" id="tempSlider" min="0.1" max="2.0" step="0.1" value="0.7" />
+              <span class="config-value" id="tempValue">0.7</span>
+            </label>
+            <label>
+              Tokens
+              <input type="range" id="tokensSlider" min="64" max="512" step="64" value="256" />
+              <span class="config-value" id="tokensValue">256</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div id="resultsArea"></div>
+
+      <div class="arena-history" id="historyArea">
+        <h3>
+          <span>Match History</span>
+          <button class="btn btn-sm" id="clearHistoryBtn" style="font-size: 0.7rem;">Clear</button>
+        </h3>
+        <div id="historyContent">
+          <div class="arena-empty">
+            <div class="arena-empty-icon">&#9876;&#65039;</div>
+            <h3>No matches yet</h3>
+            <p>Select models and start a battle to compare responses</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/arena.js"></script>
+  <script src="/js/theme.js"></script>
+  <script>
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login.html';
+    });
+  </script>
+</body>
+</html>

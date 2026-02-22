@@ -23,6 +23,7 @@ router.use('/apps', require('./apps'));
 router.use('/apply', require('./apply'));
 router.use('/metrics', require('./metrics'));
 router.use('/backroom', require('./backroom'));
+router.use('/arena', require('./arena'));
 router.use('/updates', require('./updates'));
 
 module.exports = router;

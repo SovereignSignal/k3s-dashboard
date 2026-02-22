@@ -25,10 +25,15 @@ let turnTimeout = null;
 // Default Ollama endpoints to check
 const defaultEndpoints = [
   { id: 'tinyllama', name: 'TinyLlama', url: 'http://ollama-tinyllama.default.svc.cluster.local:11434', model: 'tinyllama' },
-  { id: 'qwen', name: 'Qwen', url: 'http://ollama-qwen.default.svc.cluster.local:11434', model: 'qwen2.5:1.5b' },
-  { id: 'phi', name: 'Phi-3', url: 'http://ollama-phi.default.svc.cluster.local:11434', model: 'phi3:mini' },
-  { id: 'gemma', name: 'Gemma', url: 'http://ollama-gemma.default.svc.cluster.local:11434', model: 'gemma:2b' },
+  { id: 'qwen', name: 'Qwen3', url: 'http://ollama-qwen.default.svc.cluster.local:11434', model: 'qwen3:1.7b' },
+  { id: 'phi', name: 'Phi-4', url: 'http://ollama-phi.default.svc.cluster.local:11434', model: 'phi4-mini' },
+  { id: 'gemma', name: 'Gemma 3', url: 'http://ollama-gemma.default.svc.cluster.local:11434', model: 'gemma3:1b' },
   { id: 'deepseek', name: 'DeepSeek', url: 'http://ollama-deepseek.default.svc.cluster.local:11434', model: 'deepseek-r1:1.5b' },
+  { id: 'qwen3-06b', name: 'Qwen3 0.6B', url: 'http://ollama-qwen3-06b.default.svc.cluster.local:11434', model: 'qwen3:0.6b' },
+  { id: 'smollm2', name: 'SmolLM2', url: 'http://ollama-smollm2.default.svc.cluster.local:11434', model: 'smollm2:1.7b' },
+  { id: 'llama32', name: 'Llama 3.2', url: 'http://ollama-llama32.default.svc.cluster.local:11434', model: 'llama3.2:1b' },
+  { id: 'moondream', name: 'Moondream', url: 'http://ollama-moondream.default.svc.cluster.local:11434', model: 'moondream:1.8b' },
+  { id: 'gemma3-270m', name: 'Gemma 3 270M', url: 'http://ollama-gemma3-270m.default.svc.cluster.local:11434', model: 'gemma3:270m' },
   { id: 'ollama', name: 'Ollama', url: 'http://ollama.default.svc.cluster.local:11434', model: 'default' },
 ];
 
